@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>Dashboard O.S - Equipe Técnica | ITTNET</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ========== CSS COMPLETO (MANTIDO IGUAL) ========== */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+.login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+.login-box { background: white; padding: 30px 25px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
+.login-header { text-align: center; margin-bottom: 30px; }
+.login-header h2 { margin: 0 0 5px 0; color: #2f3e46; font-size: 24px; }
+.login-header p { margin: 0; color: #666; font-size: 14px; }
+.login-logo { font-size: 40px; margin-bottom: 15px; }
+.login-input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin-bottom: 15px; min-height: 50px; }
+.login-input:focus { outline: none; border-color: #667eea; }
+.login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; min-height: 50px; margin-top: 10px; }
+.login-error { color: #dc3545; text-align: center; margin-top: 15px; font-size: 14px; display: none; }
+
+.topbar { background: rgba(47, 62, 70, 0.95); color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); backdrop-filter: blur(10px); flex-wrap: wrap; }
+.company-name { font-size: 20px; font-weight: bold; background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.dashboard-title { font-size: 12px; color: #a0b4c8; text-align: center; width: 100%; margin-top: 8px; order: 3; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.version-badge { background: rgba(255,255,255,0.15); color: #a0b4c8; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.config-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 8px 12px; border-radius: 8px; min-height: 44px; min-width: 44px; }
+.logout-btn { background: #dc3545; color: white; padding: 8px 15px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; min-height: 40px; }
+.user-badge { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: white; }
+.sync-btn { background: #17a2b8; color: white; padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; min-height: 40px; }
+
+.container { padding: 15px; max-width: 1400px; margin: 0 auto; }
+
+.ranking-container { background: rgba(255, 255, 255, 0.95); border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.ranking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; gap: 10px; }
+.ranking-header-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ranking-header h3 { margin: 0; color: #2f3e46; font-size: 16px; display: flex; align-items: center; gap: 5px; }
+.ultima-atualizacao { background: #e9ecef; color: #495057; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.total-os-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+.ranking-list { display: flex; flex-direction: column; gap: 8px; }
+.ranking-item { display: flex; align-items: center; padding: 8px 12px; background: #f8f9fa; border-radius: 8px; }
+.ranking-medal { font-size: 20px; margin-right: 10px; min-width: 30px; text-align: center; }
+.ranking-info { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+.ranking-name { font-weight: 600; color: #2f3e46; font-size: 14px; }
+.ranking-value { background: #667eea; color: white; padding: 3px 10px; border-radius: 15px; font-size: 13px; font-weight: bold; }
+.ranking-value.leader { background: #ffc107; color: #333; }
+
+.cardTec { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.3s ease; position: relative; min-height: 80px; }
+.cardTec.lider { border-left-color: #ffc107; }
+.cardTec:active { transform: scale(0.98); background: #f8f9fa; }
+.funcao-badge { position: absolute; top: 10px; right: 10px; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.funcao-lider { background: #ffc107; color: #333; }
+.funcao-auxiliar { background: #17a2b8; color: white; }
+
+.hidden { display: none !important; }
+
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background: white; padding: 20px; width: 100%; height: 100%; max-height: 100vh; overflow-y: auto; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0; }
+.modal-title { font-size: 18px; font-weight: bold; color: #2f3e46; }
+.close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #666; padding: 8px 12px; min-height: 44px; min-width: 44px; }
+
+.tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; padding: 5px 0; }
+.tab { padding: 12px 15px; background: none; border: none; cursor: pointer; font-weight: 600; color: #666; flex: 1; min-width: 90px; font-size: 14px; min-height: 44px; position: relative; }
+.tab.active { color: #667eea; }
+.tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background: #667eea; }
+.tab-content { margin-top: 20px; }
+
+.table-container { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-size: 13px; }
+th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 8px; text-align: left; }
+td { padding: 10px 8px; border-bottom: 1px solid #eee; }
+
+button { padding: 12px 16px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: 600; min-height: 44px; font-size: 14px; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-warning { background: #ffc107; color: #333; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-info { background: #17a2b8; color: white; }
+.btn-outline-primary { background: transparent; border: 2px solid #667eea; color: #667eea; }
+
+.stats { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.stat-card { text-align: center; padding: 15px 10px; border-radius: 8px; cursor: pointer; min-height: 90px; display: flex; flex-direction: column; justify-content: center; transition: all 0.2s ease; border: 2px solid transparent; }
+.stat-card:active { transform: scale(0.96); }
+.stat-card.active-filter { border-color: #667eea; }
+.stat-value { font-size: 24px; font-weight: bold; }
+.stat-label { margin-top: 5px; font-size: 12px; }
+
+.stat-card[data-assunto*="FIBRA"] { background: linear-gradient(135deg, #d4edda 0%, #a8e6cf 100%); color: #155724; }
+.stat-card[data-assunto*="INSTALAÇÃO"] { background: linear-gradient(135deg, #d4edda 0%, #a8e6cf 100%); color: #155724; }
+.stat-card[data-assunto*="MANUTENÇÃO"] { background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); color: #856404; }
+.stat-card[data-assunto*="SUPORTE"] { background: linear-gradient(135deg, #d1ecf1 0%, #a8e0e8 100%); color: #0c5460; }
+.stat-card[data-assunto*="CONEXÃO"] { background: linear-gradient(135deg, #d1ecf1 0%, #a8e0e8 100%); color: #0c5460; }
+.stat-card[data-assunto*="REGULARIZAÇÃO"] { background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); color: #856404; }
+.stat-card[data-assunto*="RETIRADA"] { background: linear-gradient(135deg, #f8d7da 0%, #f5b5bc 100%); color: #721c24; }
+.stat-card:not([data-assunto]) { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); color: #2f3e46; }
+
+.filter-bar { background: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.filter-info { color: #666; font-size: 13px; flex: 1; }
+
+.action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.action-buttons button { flex: 1; min-width: 120px; }
+
+.overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; }
+.confirmacao-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 2000; max-width: 90%; width: 400px; }
+.confirmacao-actions { display: flex; gap: 10px; }
+.confirmacao-actions button { flex: 1; }
+
+.lista-tecnicos-config, .lista-assuntos-config, .lista-cidades-config, .lista-usuarios-config { margin-top: 15px; }
+.tecnico-item, .assunto-item, .cidade-item, .usuario-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: white; flex-wrap: wrap; gap: 10px; }
+.tecnico-actions, .assunto-actions, .cidade-actions, .usuario-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+
+#formOS { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 12px; }
+input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; width: 100%; min-height: 44px; background-color: white; }
+.radio-group { display: flex; gap: 20px; margin: 10px 0; flex-wrap: wrap; }
+.radio-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; background: #f8f9fa; border-radius: 8px; flex: 1; min-height: 44px; justify-content: center; }
+
+@media (min-width: 768px) {
+  .topbar { padding: 15px 30px; }
+  .company-name { font-size: 24px; }
+  .dashboard-title { font-size: 16px; width: auto; margin-top: 0; order: 0; flex: 1; }
+  .container { padding: 30px; }
+  .modal-content { border-radius: 10px; max-width: 700px; width: 90%; height: auto; max-height: 80vh; }
+  table { font-size: 14px; }
+  th, td { padding: 12px 15px; }
+  #formOS { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .stat-value { font-size: 28px; }
+  .stat-label { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="loginScreen" class="login-container">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-logo">🔐</div>
+      <h2>ITTNET</h2>
+      <p>Dashboard de O.S - Supabase</p>
+    </div>
+    <input type="text" id="loginUsuario" class="login-input" placeholder="Usuário" autocomplete="off" value="admin">
+    <input type="password" id="loginSenha" class="login-input" placeholder="Senha" autocomplete="off" value="admin123">
+    <button class="login-btn" onclick="fazerLogin()">Entrar</button>
+    <div id="loginError" class="login-error"></div>
+    <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">⚡ admin / admin123</p>
+  </div>
+</div>
+
+<!-- SISTEMA PRINCIPAL -->
+<div id="appContainer" class="hidden">
+
+<div class="topbar">
+  <div class="company-name">ITTNET</div>
+  <div class="topbar-right">
+    <span class="user-badge" id="userDisplay"></span>
+    <span class="version-badge">v2.0</span>
+    <button class="sync-btn" onclick="sincronizarSupabase()">🔄 Supabase</button>
+    <button class="config-btn" id="configBtn" onclick="abrirConfiguracoes()">⚙️</button>
+    <button class="logout-btn" onclick="fazerLogout()">🚪 Sair</button>
+  </div>
+  <div class="dashboard-title">Dashboard de acompanhamento diário de desempenho e comissão dos técnicos</div>
+</div>
+
+<div id="overlayConfirmacao" class="overlay hidden"></div>
+
+<div id="modalConfirmacao" class="confirmacao-modal hidden">
+  <h3 id="confirmacaoTitulo">Confirmar ação</h3>
+  <p id="confirmacaoMensagem">Tem certeza que deseja continuar?</p>
+  <div class="confirmacao-actions">
+    <button class="btn-secondary" onclick="fecharConfirmacao()">Cancelar</button>
+    <button class="btn-danger" id="btnConfirmarAcao">Confirmar</button>
+  </div>
+</div>
+
+<div id="modalConfig" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Configurações</div>
+      <button class="close-btn" onclick="fecharConfiguracoes()">&times;</button>
+    </div>
+    <div class="tabs" id="configTabs">
+      <button class="tab active" onclick="mudarTab('tecnicos')">👤 Técnicos</button>
+      <button class="tab" onclick="mudarTab('assuntos')">📋 Assuntos</button>
+      <button class="tab" onclick="mudarTab('cidades')">🏙️ Cidades</button>
+      <button class="tab" onclick="mudarTab('usuarios')" id="tabUsuariosBtn">🔐 Usuários</button>
+    </div>
+    
+    <!-- Tab Técnicos -->
+    <div id="tabTecnicos" class="tab-content">
+      <button class="btn-success" onclick="mostrarFormTecnico()" style="width: 100%; margin-bottom: 15px;">➕ Novo Técnico</button>
+      <div id="formTecnico" class="hidden" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <input type="hidden" id="editTecnicoNome">
+        <input type="text" id="nomeTecnicoInput" placeholder="Nome completo" style="width: 100%; margin-bottom: 12px;">
+        <div class="radio-group">
+          <label><input type="radio" name="funcao" value="Líder"> Líder</label>
+          <label><input type="radio" name="funcao" value="Auxiliar"> Auxiliar</label>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-success" onclick="salvarTecnico()" style="flex: 1;">Salvar</button>
+          <button class="btn-secondary" onclick="cancelarFormTecnico()" style="flex: 1;">Cancelar</button>
+        </div>
+      </div>
+      <div class="lista-tecnicos-config" id="listaTecnicosConfig"></div>
+    </div>
+    
+    <!-- Tab Assuntos -->
+    <div id="tabAssuntos" class="tab-content hidden">
+      <button class="btn-success" onclick="mostrarFormAssunto()" style="width: 100%; margin-bottom: 15px;">➕ Novo Assunto</button>
+      <div id="formAssunto" class="hidden" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <input type="hidden" id="editAssuntoNome">
+        <input type="text" id="nomeAssuntoInput" placeholder="Nome do assunto" style="width: 100%; margin-bottom: 12px;">
+        <input type="number" id="valorAssuntoInput" placeholder="Valor (R$)" step="0.01" style="width: 100%; margin-bottom: 12px;">
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-success" onclick="salvarAssunto()" style="flex: 1;">Salvar</button>
+          <button class="btn-secondary" onclick="cancelarFormAssunto()" style="flex: 1;">Cancelar</button>
+        </div>
+      </div>
+      <div id="listaAssuntosConfig"></div>
+    </div>
+    
+    <!-- Tab Cidades -->
+    <div id="tabCidades" class="tab-content hidden">
+      <button class="btn-success" onclick="mostrarFormCidade()" style="width: 100%; margin-bottom: 15px;">➕ Nova Cidade</button>
+      <div id="formCidade" class="hidden" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <input type="hidden" id="editCidadeNome">
+        <input type="text" id="nomeCidadeInput" placeholder="Nome da cidade" style="width: 100%; margin-bottom: 12px;">
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-success" onclick="salvarCidade()" style="flex: 1;">Salvar</button>
+          <button class="btn-secondary" onclick="cancelarFormCidade()" style="flex: 1;">Cancelar</button>
+        </div>
+      </div>
+      <div id="listaCidadesConfig"></div>
+    </div>
+    
+    <!-- Tab Usuários -->
+    <div id="tabUsuarios" class="tab-content hidden">
+      <button class="btn-success" onclick="mostrarFormUsuario()" style="width: 100%; margin-bottom: 15px;">➕ Novo Usuário</button>
+      <div id="formUsuario" class="hidden" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <input type="hidden" id="editUsuarioNome">
+        <input type="text" id="usuarioInput" placeholder="Usuário" style="width: 100%; margin-bottom: 12px;">
+        <input type="password" id="senhaInput" placeholder="Senha" style="width: 100%; margin-bottom: 12px;">
+        <select id="tecnicoVinculadoSelect" style="width: 100%; margin-bottom: 12px;">
+          <option value="">Vincular a um técnico (opcional)</option>
+        </select>
+        <div class="radio-group">
+          <label><input type="radio" name="tipoUsuario" value="admin"> Admin</label>
+          <label><input type="radio" name="tipoUsuario" value="tecnico" checked> Técnico</label>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-success" onclick="salvarUsuario()" style="flex: 1;">Salvar</button>
+          <button class="btn-secondary" onclick="cancelarFormUsuario()" style="flex: 1;">Cancelar</button>
+        </div>
+      </div>
+      <div id="listaUsuariosConfig"></div>
+    </div>
+    
+    <div style="margin-top: 20px; text-align: right;">
+      <button class="btn-primary" onclick="fecharConfiguracoes()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalDetalhamento" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">💰 Detalhamento de Comissão</div>
+      <button class="close-btn" onclick="fecharDetalhamento()">&times;</button>
+    </div>
+    <div id="detalhamentoContent"></div>
+    <div style="margin-top: 20px; text-align: right;">
+      <button class="btn-primary" onclick="fecharDetalhamento()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="home">
+  <h2 style="color: white; margin-bottom: 15px; font-size: 20px;">Selecione o Técnico</h2>
+  
+  <button class="btn-primary" id="btnImportar" onclick="document.getElementById('importar').click()" style="width: 100%; margin-bottom: 15px;">
+    📂 Importar Arquivo Excel
+  </button>
+  <input type="file" id="importar" accept=".xlsx,.xls" style="display:none">
+  
+  <div class="ranking-container" id="rankingContainer">
+    <div class="ranking-header">
+      <div class="ranking-header-left">
+        <h3>🏆 Ranking por quantidade de O.S</h3>
+        <span class="ultima-atualizacao" id="ultimaAtualizacao">📅 Atualizado até: <span id="dataUltimaOS">--/--/----</span></span>
+      </div>
+      <span class="total-os-badge" id="totalOSGeral">0 O.S este mês</span>
+    </div>
+    <div class="ranking-list" id="rankingList"></div>
+  </div>
+  
+  <div id="listaTecnicos" style="margin-top: 10px;"></div>
+</div>
+
+<div class="container hidden" id="painel">
+  <div class="painel-header" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <button class="btn-primary" onclick="voltar()">⬅ Voltar</button>
+      <h2 style="color: white; font-size: 16px; margin: 0;" id="nomeTecnico"></h2>
+    </div>
+    <div class="action-buttons">
+      <button class="btn-success" onclick="toggleForm()" id="btnNovaOS">➕ Nova OS</button>
+      <button class="btn-danger" id="btnExcluirSelecionados" onclick="excluirSelecionados()" disabled>🗑 Excluir Selecionados</button>
+    </div>
+  </div>
+
+  <div id="stats" class="stats"></div>
+  
+  <div id="filterBar" class="filter-bar hidden">
+    <div class="filter-info"><span id="filterText"></span></div>
+    <button class="btn-outline-primary" onclick="limparFiltro()" style="min-height: 36px;">✖ Limpar</button>
+  </div>
+
+  <div id="formOS" class="hidden">
+    <input type="hidden" id="editIndex">
+    <input id="id" placeholder="Nº OS" required>
+    <input type="date" id="data" required>
+    <select id="assunto" required></select>
+    <select id="cidade"></select>
+    <input id="comissao" placeholder="Comissão (R$)" type="number" step="0.01">
+    <div style="display: flex; gap: 8px; grid-column: 1/-1;">
+      <button class="btn-success" onclick="salvarOS()" style="flex: 1;">💾 Salvar</button>
+      <button class="btn-primary" onclick="toggleForm()" style="flex: 1;">❌ Cancelar</button>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th width="40"><input type="checkbox" id="checkboxTodos" onclick="selecionarTodos(this)" disabled></th>
+          <th>OS</th><th>Data</th><th>Assunto</th><th>Cidade</th><th>Comissão</th><th width="80">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ==================== CONFIGURAÇÃO SUPABASE ====================
+const SUPABASE_URL = 'https://yehnwtkvpcywatfsgpmt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Z35TOMGYM-fK1PnQi6ulGA_zLe5FhfO';
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ==================== DADOS ====================
+let usuarioLogado = null;
+let usuarios = [{ usuario: "admin", senha: "admin123", tipo: "admin", tecnicoVinculado: null }];
+let dados = [];
+let tecnicoSelecionado = "";
+let editandoIndex = -1;
+let filtroAssunto = null;
+let callbackConfirmacao = null;
+
+let tecnicos = [];
+let assuntosMap = {};
+let cidades = [];
+
+// ==================== FUNÇÕES SUPABASE ====================
+async function carregarDadosSupabase() {
+  try {
+    showLoading('Carregando dados do Supabase...');
+    
+    // Carregar OS
+    const { data: osData } = await supabaseClient.from('os').select('*').order('data', { ascending: false });
+    if (osData) {
+      dados = osData.map(row => ({
+        id: String(row.id || ''),
+        equipe: row.equipe ? row.equipe.split('/').map(t => t.trim().toUpperCase()) : [],
+        assunto: row.assunto || '',
+        data: row.data || '',
+        cidade: row.cidade || '',
+        comissao: parseFloat(row.comissao) || 0
+      }));
+    }
+    
+    // Carregar Técnicos
+    const { data: tecData } = await supabaseClient.from('tecnicos').select('*');
+    if (tecData) {
+      tecnicos = tecData.map(row => ({
+        nome: String(row.nome || '').toUpperCase(),
+        ativo: row.ativo === true,
+        funcao: row.funcao || 'Auxiliar',
+        apelido: row.apelido || row.nome?.split(' ')[0] || ''
+      }));
+    }
+    if (tecnicos.length === 0) inicializarTecnicosPadrao();
+    
+    // Carregar Assuntos
+    const { data: assData } = await supabaseClient.from('assuntos').select('*');
+    if (assData) {
+      assuntosMap = {};
+      assData.forEach(row => { assuntosMap[String(row.nome || '').toUpperCase()] = parseFloat(row.valor) || 0; });
+    }
+    
+    // Carregar Cidades
+    const { data: cidData } = await supabaseClient.from('cidades').select('*');
+    if (cidData) {
+      cidades = cidData.map(row => String(row.nome || ''));
+    }
+    
+    // Carregar Usuários
+    const { data: usrData } = await supabaseClient.from('usuarios').select('*');
+    if (usrData) {
+      usuarios = usrData.map(row => ({
+        usuario: String(row.usuario || ''),
+        senha: String(row.senha || ''),
+        tipo: row.tipo || 'tecnico',
+        tecnicoVinculado: row.tecnico_vinculado || null
+      }));
+    }
+    if (!usuarios.find(u => u.usuario === 'admin')) {
+      usuarios.push({ usuario: "admin", senha: "admin123", tipo: "admin", tecnicoVinculado: null });
+    }
+    
+    hideLoading();
+    return true;
+  } catch (error) {
+    console.error('❌ Erro:', error);
+    carregarDadosExemplo();
+    hideLoading();
+    return false;
+  }
+}
+
+async function sincronizarSupabase() {
+  if (!confirm('Sincronizar dados do Supabase?')) return;
+  await carregarDadosSupabase();
+  carregarTecnicos();
+  carregarAssuntos();
+  carregarCidades();
+  atualizarRanking();
+  if (tecnicoSelecionado) { atualizarTabela(); atualizarStats(); }
+  alert('✅ Dados sincronizados!');
+}
+
+// ==================== CRUD TÉCNICOS ====================
+async function salvarTecnico() {
+  const nome = document.getElementById('nomeTecnicoInput').value.trim().toUpperCase();
+  const funcao = document.querySelector('input[name="funcao"]:checked')?.value || 'Auxiliar';
+  const editNome = document.getElementById('editTecnicoNome').value;
+  
+  if (!nome) { alert('Digite o nome'); return; }
+  
+  const tecnico = { nome, ativo: true, funcao, apelido: nome.split(' ')[0] };
+  
+  if (editNome) {
+    await supabaseClient.from('tecnicos').update(tecnico).eq('nome', editNome);
+  } else {
+    await supabaseClient.from('tecnicos').insert(tecnico);
+  }
+  
+  await carregarDadosSupabase();
+  carregarListaConfig();
+  carregarTecnicos();
+  cancelarFormTecnico();
+}
+
+function editarTecnico(nome) {
+  const t = tecnicos.find(tn => tn.nome === nome);
+  document.getElementById('nomeTecnicoInput').value = t.nome;
+  document.querySelector(`input[name="funcao"][value="${t.funcao || 'Auxiliar'}"]`).checked = true;
+  document.getElementById('editTecnicoNome').value = nome;
+  document.getElementById('formTecnico').classList.remove('hidden');
+}
+
+async function toggleStatusTecnico(nome) {
+  const t = tecnicos.find(tn => tn.nome === nome);
+  await supabaseClient.from('tecnicos').update({ ativo: !t.ativo }).eq('nome', nome);
+  await carregarDadosSupabase();
+  carregarListaConfig();
+  carregarTecnicos();
+}
+
+async function excluirTecnico(nome) {
+  if (!confirm(`Excluir ${nome}?`)) return;
+  await supabaseClient.from('tecnicos').delete().eq('nome', nome);
+  await carregarDadosSupabase();
+  carregarListaConfig();
+  carregarTecnicos();
+}
+
+// ==================== CRUD ASSUNTOS ====================
+async function salvarAssunto() {
+  const nome = document.getElementById('nomeAssuntoInput').value.trim().toUpperCase();
+  const valor = parseFloat(document.getElementById('valorAssuntoInput').value);
+  const editNome = document.getElementById('editAssuntoNome').value;
+  
+  if (!nome || valor <= 0) { alert('Dados inválidos'); return; }
+  
+  if (editNome) {
+    await supabaseClient.from('assuntos').update({ nome, valor }).eq('nome', editNome);
+  } else {
+    await supabaseClient.from('assuntos').insert({ nome, valor });
+  }
+  
+  await carregarDadosSupabase();
+  carregarListaAssuntos();
+  carregarAssuntos();
+  cancelarFormAssunto();
+}
+
+function editarAssunto(nome) {
+  document.getElementById('nomeAssuntoInput').value = nome;
+  document.getElementById('valorAssuntoInput').value = assuntosMap[nome];
+  document.getElementById('editAssuntoNome').value = nome;
+  document.getElementById('formAssunto').classList.remove('hidden');
+}
+
+async function excluirAssunto(nome) {
+  if (!confirm(`Excluir "${nome}"?`)) return;
+  await supabaseClient.from('assuntos').delete().eq('nome', nome);
+  await carregarDadosSupabase();
+  carregarListaAssuntos();
+  carregarAssuntos();
+}
+
+// ==================== CRUD CIDADES ====================
+async function salvarCidade() {
+  const nome = document.getElementById('nomeCidadeInput').value.trim();
+  const editNome = document.getElementById('editCidadeNome').value;
+  
+  if (!nome) { alert('Digite o nome'); return; }
+  const cidadeFormatada = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+  
+  if (editNome) {
+    await supabaseClient.from('cidades').update({ nome: cidadeFormatada }).eq('nome', editNome);
+  } else {
+    await supabaseClient.from('cidades').insert({ nome: cidadeFormatada });
+  }
+  
+  await carregarDadosSupabase();
+  carregarListaCidades();
+  carregarCidades();
+  cancelarFormCidade();
+}
+
+function editarCidade(nome) {
+  document.getElementById('nomeCidadeInput').value = nome;
+  document.getElementById('editCidadeNome').value = nome;
+  document.getElementById('formCidade').classList.remove('hidden');
+}
+
+async function excluirCidade(nome) {
+  if (!confirm(`Excluir ${nome}?`)) return;
+  await supabaseClient.from('cidades').delete().eq('nome', nome);
+  await carregarDadosSupabase();
+  carregarListaCidades();
+  carregarCidades();
+}
+
+// ==================== CRUD USUÁRIOS ====================
+async function salvarUsuario() {
+  const usuario = document.getElementById('usuarioInput').value.trim();
+  const senha = document.getElementById('senhaInput').value;
+  const tipo = document.querySelector('input[name="tipoUsuario"]:checked').value;
+  const tecnicoVinculado = document.getElementById('tecnicoVinculadoSelect').value;
+  const editUsuario = document.getElementById('editUsuarioNome').value;
+  
+  if (!usuario) { alert('Digite o usuário'); return; }
+  if (!editUsuario && !senha) { alert('Digite a senha'); return; }
+  
+  const userData = { usuario, tipo, tecnico_vinculado: tecnicoVinculado || null };
+  if (senha) userData.senha = senha;
+  
+  if (editUsuario) {
+    await supabaseClient.from('usuarios').update(userData).eq('usuario', editUsuario);
+  } else {
+    await supabaseClient.from('usuarios').insert(userData);
+  }
+  
+  await carregarDadosSupabase();
+  carregarListaUsuarios();
+  cancelarFormUsuario();
+}
+
+function editarUsuario(usuario) {
+  const u = usuarios.find(us => us.usuario === usuario);
+  document.getElementById('usuarioInput').value = u.usuario;
+  document.getElementById('senhaInput').value = '';
+  document.getElementById('senhaInput').placeholder = '****** (mantenha para não alterar)';
+  document.querySelector(`input[name="tipoUsuario"][value="${u.tipo}"]`).checked = true;
+  document.getElementById('editUsuarioNome').value = usuario;
+  carregarSelectTecnicos();
+  document.getElementById('tecnicoVinculadoSelect').value = u.tecnicoVinculado || '';
+  document.getElementById('formUsuario').classList.remove('hidden');
+}
+
+async function excluirUsuario(usuario) {
+  if (usuario === 'admin') { alert('Admin não pode ser excluído!'); return; }
+  if (!confirm(`Excluir ${usuario}?`)) return;
+  await supabaseClient.from('usuarios').delete().eq('usuario', usuario);
+  await carregarDadosSupabase();
+  carregarListaUsuarios();
+}
+
+// ==================== FUNÇÕES AUXILIARES ====================
+function carregarDadosExemplo() {
+  dados = [
+    { id: "146710", equipe: ["GEOVANE", "LUIZ FELIPE"], assunto: "CONEXÃO - JF", data: "2026-04-01", cidade: "", comissao: 4 },
+    { id: "144656", equipe: ["EUGENIO"], assunto: "RETIRADA DE EQUIPAMENTO (THE)", data: "2026-04-01", cidade: "Teresina", comissao: 3 },
+    { id: "146748", equipe: ["JULIO", "JOSÉ ALBERNEY"], assunto: "MANUTENÇÃO DE DROP (THE)", data: "2026-04-01", cidade: "Teresina", comissao: 8 }
+  ];
+  inicializarTecnicosPadrao();
+}
+
+function inicializarTecnicosPadrao() {
+  tecnicos = [
+    { nome: "JULIO CESAR PEREIRA DO LIVRAMENTO", ativo: true, funcao: "Líder", apelido: "JULIO" },
+    { nome: "JOSE ALBERNEY CARVALHO SILVA", ativo: true, funcao: "Auxiliar", apelido: "JOSÉ ALBERNEY" },
+    { nome: "RHUAN JORGE SANTOS", ativo: true, funcao: "Auxiliar", apelido: "RHUAN" },
+    { nome: "JACKSON KESLLON GONÇALVES DE SOUSA", ativo: true, funcao: "Auxiliar", apelido: "JACKSON" },
+    { nome: "EUGENIO MARTINS DE OLIVEIRA NETO", ativo: true, funcao: "Auxiliar", apelido: "EUGENIO" },
+    { nome: "FRANCISCO DAVID DOS SANTOS CUNHA", ativo: true, funcao: "Auxiliar", apelido: "FRANCISCO DAVID" },
+    { nome: "GEOVANE DA ROCHA SOUSA", ativo: true, funcao: "Auxiliar", apelido: "GEOVANE" },
+    { nome: "LUIS FELIPE LOPES DA SILVA", ativo: true, funcao: "Auxiliar", apelido: "LUIZ FELIPE" }
+  ];
+}
+
+function showLoading(msg) {
+  let d = document.getElementById('loadingOverlay');
+  if (!d) { d = document.createElement('div'); d.id = 'loadingOverlay'; d.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:9999;color:white;font-size:18px;'; document.body.appendChild(d); }
+  d.innerHTML = `<div>🔄<br>${msg}</div>`; d.style.display = 'flex';
+}
+function hideLoading() { const d = document.getElementById('loadingOverlay'); if (d) d.style.display = 'none'; }
+
+// ==================== LOGIN ====================
+function fazerLogin() {
+  const u = document.getElementById('loginUsuario').value.trim();
+  const s = document.getElementById('loginSenha').value;
+  const user = usuarios.find(x => x.usuario === u && x.senha === s);
+  if (user) {
+    usuarioLogado = user;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    document.getElementById('userDisplay').textContent = `${user.usuario} (${user.tipo==='admin'?'ADMIN':'Técnico'})`;
+    document.getElementById('configBtn').style.display = user.tipo==='admin' ? 'flex':'none';
+    document.getElementById('btnImportar').style.display = user.tipo==='admin' ? 'block':'none';
+    inicializar();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function fazerLogout() {
+  usuarioLogado = null;
+  document.getElementById('appContainer').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+function verificarPermissaoConfig() {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado.'); return false; }
+  return true;
+}
+
+// ==================== INICIALIZAÇÃO ====================
+async function inicializar() {
+  await carregarDadosSupabase();
+  carregarTecnicos();
+  carregarAssuntos();
+  carregarCidades();
+  atualizarRanking();
+}
+
+// ==================== FUNÇÕES DO SISTEMA ====================
+function getDataUltimaOS() {
+  if (dados.length === 0) return null;
+  return [...dados].sort((a, b) => new Date(b.data) - new Date(a.data))[0].data;
+}
+
+function formatarDataExibicao(data) {
+  if (!data) return '--/--/----';
+  const partes = data.split('-');
+  return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : data;
+}
+
+function osExiste(id) { return dados.some(os => String(os.id) === String(id)); }
+
+function atualizarRanking() {
+  const rankingList = document.getElementById('rankingList');
+  const totalOSGeral = document.getElementById('totalOSGeral');
+  const osUnicas = new Set(dados.map(os => os.id));
+  totalOSGeral.textContent = `${osUnicas.size} O.S este mês`;
+  document.getElementById('dataUltimaOS').textContent = formatarDataExibicao(getDataUltimaOS());
+  
+  const osPorTecnico = {};
+  tecnicos.filter(t => t.ativo).forEach(t => {
+    osPorTecnico[t.nome] = dados.filter(os => os.equipe?.some(e => e.includes(t.apelido) || t.nome.includes(e))).length;
+  });
+  
+  const ranking = Object.entries(osPorTecnico).sort((a, b) => b[1] - a[1]).filter(([_, q]) => q > 0);
+  if (ranking.length === 0) {
+    rankingList.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">Nenhuma O.S</div>';
+    return;
+  }
+  
+  const medalhas = ['🥇', '🥈', '🥉'];
+  rankingList.innerHTML = ranking.slice(0, 3).map(([nome, qtd], i) => {
+    const t = tecnicos.find(tn => tn.nome === nome);
+    let nomeEx = nome.split(' ')[0];
+    if (nome.includes('JOSE ALBERNEY')) nomeEx = 'JOSÉ ALBERNEY';
+    return `<div class="ranking-item"><span class="ranking-medal">${medalhas[i]}</span><div class="ranking-info"><span class="ranking-name">${nomeEx}</span><span class="ranking-value ${t?.funcao==='Líder'?'leader':''}">${qtd} O.S</span></div></div>`;
+  }).join('');
+}
+
+function calcularComissaoTecnico(nome) {
+  const t = tecnicos.find(tn => tn.nome === nome);
+  let total = 0;
+  dados.forEach(os => {
+    if (os.equipe?.some(e => e.includes(t?.apelido) || t?.nome.includes(e))) {
+      total += os.comissao / os.equipe.length;
+    }
+  });
+  return total + (t?.funcao === 'Líder' ? 100 : 0);
+}
+
+function carregarTecnicos() {
+  const lista = document.getElementById('listaTecnicos');
+  lista.innerHTML = '';
+  let ativos = tecnicos.filter(t => t.ativo);
+  if (usuarioLogado?.tipo === 'tecnico' && usuarioLogado?.tecnicoVinculado) {
+    ativos = ativos.filter(t => t.nome === usuarioLogado.tecnicoVinculado);
+  }
+  
+  const info = ativos.map(({ nome, funcao }) => {
+    const osT = dados.filter(d => d.equipe?.some(e => e.includes(nome.split(' ')[0]) || nome.includes(e)));
+    return { nome, funcao: funcao || 'Auxiliar', quantidade: osT.length, valorTotal: calcularComissaoTecnico(nome) };
+  });
+  
+  info.sort((a, b) => b.quantidade - a.quantidade || b.valorTotal - a.valorTotal || a.nome.localeCompare(b.nome));
+  
+  info.forEach(i => {
+    const d = document.createElement('div');
+    d.className = `cardTec ${i.funcao === 'Líder' ? 'lider' : ''}`;
+    d.innerHTML = `<span class="funcao-badge ${i.funcao === 'Líder' ? 'funcao-lider' : 'funcao-auxiliar'}">${i.funcao}</span><strong>${i.nome}</strong><br><small>📊 ${i.quantidade} OS | 💰 <span style="cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation();mostrarDetalhamento('${i.nome}')">R$ ${i.valorTotal.toFixed(2)}</span></small>`;
+    d.onclick = () => abrirTecnico(i.nome);
+    lista.appendChild(d);
+  });
+}
+
+function carregarListaConfig() {
+  const lista = document.getElementById('listaTecnicosConfig');
+  lista.innerHTML = '';
+  tecnicos.sort((a, b) => a.nome.localeCompare(b.nome)).forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'tecnico-item';
+    d.innerHTML = `<div style="flex:1;"><strong>${t.nome}</strong><div style="margin-top:5px;"><span class="funcao-badge ${t.funcao==='Líder'?'funcao-lider':'funcao-auxiliar'}" style="position:static;">${t.funcao||'Auxiliar'}</span><span class="status-badge" style="position:static;margin-left:5px;background:${t.ativo?'#28a745':'#dc3545'};color:white;padding:2px 8px;border-radius:12px;font-size:11px;">${t.ativo?'Ativo':'Inativo'}</span></div></div><div class="tecnico-actions"><button class="btn-warning" onclick="editarTecnico('${t.nome}')" style="padding:6px 10px;">✏️</button><button class="${t.ativo?'btn-secondary':'btn-success'}" onclick="toggleStatusTecnico('${t.nome}')" style="padding:6px 10px;">${t.ativo?'🔴':'🟢'}</button><button class="btn-danger" onclick="excluirTecnico('${t.nome}')" style="padding:6px 10px;">🗑️</button></div>`;
+    lista.appendChild(d);
+  });
+}
+
+function carregarListaAssuntos() {
+  const lista = document.getElementById('listaAssuntosConfig');
+  lista.innerHTML = '';
+  Object.entries(assuntosMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([n, v]) => {
+    const d = document.createElement('div'); d.className = 'assunto-item';
+    d.innerHTML = `<div><strong>${n}</strong><br><small>R$ ${v.toFixed(2)}</small></div><div class="assunto-actions"><button class="btn-warning" onclick="editarAssunto('${n}')" style="padding:6px 10px;">✏️</button><button class="btn-danger" onclick="excluirAssunto('${n}')" style="padding:6px 10px;">🗑️</button></div>`;
+    lista.appendChild(d);
+  });
+}
+
+function carregarListaCidades() {
+  const lista = document.getElementById('listaCidadesConfig');
+  lista.innerHTML = '';
+  cidades.sort().forEach(c => {
+    const d = document.createElement('div'); d.className = 'cidade-item';
+    d.innerHTML = `<div><strong>${c}</strong></div><div class="cidade-actions"><button class="btn-warning" onclick="editarCidade('${c}')" style="padding:6px 10px;">✏️</button><button class="btn-danger" onclick="excluirCidade('${c}')" style="padding:6px 10px;">🗑️</button></div>`;
+    lista.appendChild(d);
+  });
+}
+
+function carregarListaUsuarios() {
+  const lista = document.getElementById('listaUsuariosConfig');
+  lista.innerHTML = '';
+  usuarios.forEach(u => {
+    const d = document.createElement('div'); d.className = 'usuario-item';
+    d.innerHTML = `<div><strong>${u.usuario}</strong><br><small>${u.tipo==='admin'?'ADMIN':'Técnico'}</small></div><div class="usuario-actions"><button class="btn-warning" onclick="editarUsuario('${u.usuario}')" style="padding:6px 10px;">✏️</button><button class="btn-danger" onclick="excluirUsuario('${u.usuario}')" style="padding:6px 10px;">🗑️</button></div>`;
+    lista.appendChild(d);
+  });
+}
+
+function carregarSelectTecnicos() {
+  const select = document.getElementById('tecnicoVinculadoSelect');
+  select.innerHTML = '<option value="">Vincular a um técnico (opcional)</option>';
+  tecnicos.filter(t => t.ativo).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.nome;
+    opt.textContent = t.nome;
+    select.appendChild(opt);
+  });
+}
+
+function carregarCidades() {
+  const sel = document.getElementById('cidade');
+  sel.innerHTML = '<option value="">Selecione a Cidade</option>';
+  cidades.sort().forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+}
+
+function carregarAssuntos() {
+  const sel = document.getElementById('assunto');
+  sel.innerHTML = '<option value="">Selecione o Assunto</option>';
+  Object.entries(assuntosMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([n, v]) => {
+    const o = document.createElement('option'); o.value = n; o.textContent = `${n} (R$ ${v.toFixed(2)})`; sel.appendChild(o);
+  });
+  sel.onchange = function() { if (this.value && assuntosMap[this.value]) document.getElementById('comissao').value = assuntosMap[this.value]; };
+}
+
+function mostrarDetalhamento(nome) {
+  const t = tecnicos.find(tn => tn.nome === nome);
+  const osT = dados.filter(d => d.equipe?.some(e => e.includes(t?.apelido) || t?.nome.includes(e)));
+  let html = `<div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:15px;"><h3>${nome}</h3><p>Função: ${t?.funcao||'Auxiliar'} ${t?.funcao==='Líder'?'(Bônus: +R$ 100,00)':''}</p></div>`;
+  let total = 0;
+  osT.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(os => {
+    const ind = os.comissao / os.equipe.length;
+    total += ind;
+    html += `<div style="padding:15px;border-bottom:1px solid #eee;"><strong>OS: ${os.id}</strong> - ${new Date(os.data+'T00:00:00').toLocaleDateString('pt-BR')}<br><small>Equipe: ${os.equipe.join(' / ')} | ${os.assunto} | ${os.cidade||'-'}</small><br><div>💰 Total: R$ ${os.comissao.toFixed(2)} | 👤 Sua parte: R$ ${ind.toFixed(2)}</div></div>`;
+  });
+  if (t?.funcao === 'Líder') { total += 100; html += `<div style="padding:15px;background:#fff9e6;"><strong>🎁 Bônus de Líder</strong><br>+ R$ 100,00</div>`; }
+  html += `<div style="font-size:18px;font-weight:bold;color:#28a745;margin-top:15px;padding-top:15px;border-top:2px solid #e0e0e0;">💰 Total Geral: R$ ${total.toFixed(2)}</div>`;
+  document.getElementById('detalhamentoContent').innerHTML = html;
+  document.getElementById('modalDetalhamento').classList.remove('hidden');
+}
+
+function fecharDetalhamento() { document.getElementById('modalDetalhamento').classList.add('hidden'); }
+
+function mostrarFormTecnico() {
+  document.getElementById('formTecnico').classList.remove('hidden');
+  document.getElementById('nomeTecnicoInput').value = '';
+  document.querySelector('input[name="funcao"][value="Líder"]').checked = true;
+  document.getElementById('editTecnicoNome').value = '';
+}
+
+function cancelarFormTecnico() { document.getElementById('formTecnico').classList.add('hidden'); }
+
+function mostrarFormAssunto() {
+  document.getElementById('formAssunto').classList.remove('hidden');
+  document.getElementById('nomeAssuntoInput').value = '';
+  document.getElementById('valorAssuntoInput').value = '';
+  document.getElementById('editAssuntoNome').value = '';
+}
+
+function cancelarFormAssunto() { document.getElementById('formAssunto').classList.add('hidden'); }
+
+function mostrarFormCidade() {
+  document.getElementById('formCidade').classList.remove('hidden');
+  document.getElementById('nomeCidadeInput').value = '';
+  document.getElementById('editCidadeNome').value = '';
+}
+
+function cancelarFormCidade() { document.getElementById('formCidade').classList.add('hidden'); }
+
+function mostrarFormUsuario() {
+  document.getElementById('formUsuario').classList.remove('hidden');
+  document.getElementById('usuarioInput').value = '';
+  document.getElementById('senhaInput').value = '';
+  document.getElementById('senhaInput').placeholder = 'Senha';
+  document.querySelector('input[name="tipoUsuario"][value="tecnico"]').checked = true;
+  document.getElementById('editUsuarioNome').value = '';
+  carregarSelectTecnicos();
+}
+
+function cancelarFormUsuario() { document.getElementById('formUsuario').classList.add('hidden'); }
+
+function mudarTab(tab) {
+  document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  ['Tecnicos','Assuntos','Cidades','Usuarios'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
+  if (tab === 'tecnicos') document.getElementById('tabTecnicos').classList.remove('hidden');
+  else if (tab === 'assuntos') { document.getElementById('tabAssuntos').classList.remove('hidden'); carregarListaAssuntos(); }
+  else if (tab === 'cidades') { document.getElementById('tabCidades').classList.remove('hidden'); carregarListaCidades(); }
+  else if (tab === 'usuarios') { document.getElementById('tabUsuarios').classList.remove('hidden'); carregarListaUsuarios(); carregarSelectTecnicos(); }
+}
+
+function abrirConfiguracoes() {
+  if (!verificarPermissaoConfig()) return;
+  document.getElementById('modalConfig').classList.remove('hidden');
+  carregarListaConfig();
+  document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('#configTabs .tab').classList.add('active');
+  ['Assuntos','Cidades','Usuarios'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
+  document.getElementById('tabTecnicos').classList.remove('hidden');
+}
+
+function fecharConfiguracoes() { document.getElementById('modalConfig').classList.add('hidden'); }
+
+function abrirTecnico(nome) {
+  tecnicoSelecionado = nome;
+  filtroAssunto = null;
+  document.getElementById('nomeTecnico').innerText = nome;
+  document.getElementById('home').classList.add('hidden');
+  document.getElementById('painel').classList.remove('hidden');
+  atualizarTabela();
+  atualizarStats();
+  atualizarEstadoBotoes();
+}
+
+function voltar() { document.getElementById('home').classList.remove('hidden'); document.getElementById('painel').classList.add('hidden'); carregarTecnicos(); }
+function filtrarPorAssunto(assunto) { filtroAssunto = filtroAssunto === assunto ? null : assunto; atualizarTabela(); atualizarStats(); atualizarBarraFiltro(); }
+function limparFiltro() { filtroAssunto = null; atualizarTabela(); atualizarStats(); atualizarBarraFiltro(); }
+
+function atualizarBarraFiltro() {
+  const bar = document.getElementById('filterBar');
+  if (filtroAssunto) {
+    const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
+    document.getElementById('filterText').innerHTML = `<strong>Filtro:</strong> ${filtroAssunto} (${base.filter(d => d.assunto === filtroAssunto).length} OS)`;
+    bar.classList.remove('hidden');
+  } else bar.classList.add('hidden');
+}
+
+function toggleForm() { document.getElementById('formOS').classList.toggle('hidden'); }
+
+async function salvarOS() {
+  const id = document.getElementById('id').value.trim();
+  const data = document.getElementById('data').value;
+  const assunto = document.getElementById('assunto').value;
+  const cidade = document.getElementById('cidade').value;
+  const comissao = parseFloat(document.getElementById('comissao').value) || 0;
+  
+  if (!id || !data || !assunto) { alert('Preencha todos os campos'); return; }
+  if (editandoIndex === -1 && osExiste(id)) { alert(`OS #${id} já existe!`); return; }
+  
+  const novaOS = { id, data, equipe: [tecnicoSelecionado.split(' ')[0]], assunto, cidade, comissao };
+  
+  await supabaseClient.from('os').upsert({
+    id, equipe: novaOS.equipe.join(' / '), assunto, data, cidade, comissao
+  }, { onConflict: 'id' });
+  
+  if (editandoIndex >= 0) dados[editandoIndex] = novaOS;
+  else dados.push(novaOS);
+  
+  dados.sort((a, b) => new Date(b.data) - new Date(a.data));
+  atualizarTabela(); atualizarStats();
+  toggleForm(); editandoIndex = -1;
+  carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking();
+  alert('✅ OS salva no Supabase!');
+}
+
+function editarOS(index) {
+  const os = dados[index]; editandoIndex = index;
+  document.getElementById('editIndex').value = index;
+  document.getElementById('id').value = os.id;
+  document.getElementById('data').value = os.data;
+  document.getElementById('assunto').value = os.assunto;
+  document.getElementById('cidade').value = os.cidade || '';
+  document.getElementById('comissao').value = os.comissao;
+  document.getElementById('formOS').classList.remove('hidden');
+}
+
+async function excluirOS(index) {
+  const os = dados[index];
+  if (!confirm('Excluir esta OS?')) return;
+  await supabaseClient.from('os').delete().eq('id', os.id);
+  dados.splice(index, 1);
+  atualizarTabela(); atualizarStats();
+  carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking();
+}
+
+function selecionarTodos(m) { document.querySelectorAll('#tbody input[type="checkbox"]').forEach(c => c.checked = m.checked); atualizarEstadoBotoes(); }
+
+async function excluirSelecionados() {
+  const checks = document.querySelectorAll('#tbody input[type="checkbox"]:checked');
+  if (!checks.length) { alert('Selecione pelo menos uma OS'); return; }
+  if (!confirm(`Excluir ${checks.length} OS?`)) return;
+  
+  const indices = Array.from(checks).map(c => parseInt(c.dataset.index)).sort((a, b) => b - a);
+  for (const idx of indices) {
+    await supabaseClient.from('os').delete().eq('id', dados[idx].id);
+    dados.splice(idx, 1);
+  }
+  atualizarTabela(); atualizarStats();
+  carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking();
+}
+
+function atualizarEstadoBotoes() {
+  const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
+  const baseFiltrada = filtroAssunto ? base.filter(d => d.assunto === filtroAssunto) : base;
+  const temRegistros = baseFiltrada.length > 0;
+  const btnExcluir = document.getElementById('btnExcluirSelecionados');
+  const checkboxTodos = document.getElementById('checkboxTodos');
+  checkboxTodos.disabled = !temRegistros;
+  if (!temRegistros) checkboxTodos.checked = false;
+  const algumSelecionado = Array.from(document.querySelectorAll('#tbody input[type="checkbox"]')).some(cb => cb.checked);
+  btnExcluir.disabled = !temRegistros || !algumSelecionado;
+}
+
+function atualizarTabela() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  let base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
+  if (filtroAssunto) base = base.filter(d => d.assunto === filtroAssunto);
+  
+  if (base.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;">Nenhuma OS</td></tr>`;
+    document.getElementById('checkboxTodos').disabled = true;
+    document.getElementById('btnExcluirSelecionados').disabled = true;
+    return;
+  }
+  
+  base.forEach(os => {
+    const indexReal = dados.indexOf(os);
+    const row = document.createElement('tr');
+    row.innerHTML = `<td><input type="checkbox" data-index="${indexReal}" onchange="atualizarEstadoBotoes()"></td><td><strong>${os.id}</strong></td><td>${new Date(os.data+'T00:00:00').toLocaleDateString('pt-BR')}</td><td>${os.assunto}</td><td>${os.cidade||'-'}</td><td>R$ ${(os.comissao/os.equipe.length).toFixed(2)}</td><td><button onclick="editarOS(${indexReal})" style="padding:6px 8px;background:#ffc107;">✏️</button><button onclick="excluirOS(${indexReal})" style="padding:6px 8px;background:#dc3545;color:white;">🗑️</button></td>`;
+    tbody.appendChild(row);
+  });
+  
+  document.getElementById('checkboxTodos').disabled = false;
+  document.getElementById('btnExcluirSelecionados').disabled = true;
+}
+
+function atualizarStats() {
+  const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
+  const baseFiltrada = filtroAssunto ? base.filter(d => d.assunto === filtroAssunto) : base;
+  const totalOS = baseFiltrada.length;
+  let totalComissao = 0;
+  baseFiltrada.forEach(os => totalComissao += os.comissao / os.equipe.length);
+  const tecnico = tecnicos.find(t => t.nome === tecnicoSelecionado);
+  if (tecnico?.funcao === 'Líder') totalComissao += 100;
+  
+  const porAssunto = {};
+  baseFiltrada.forEach(os => { porAssunto[os.assunto] = (porAssunto[os.assunto] || 0) + 1; });
+  
+  let html = `
+    <div class="stat-card" onclick="limparFiltro()"><div class="stat-value">${totalOS}</div><div class="stat-label">Total de OS</div></div>
+    <div class="stat-card" onclick="mostrarDetalhamento('${tecnicoSelecionado}')"><div class="stat-value">R$ ${totalComissao.toFixed(2)}</div><div class="stat-label">Comissões ${tecnico?.funcao==='Líder'?'(c/ bônus)':''}</div></div>
+  `;
+  
+  Object.entries(porAssunto).sort((a, b) => b[1] - a[1]).forEach(([assunto, qtd]) => {
+    html += `<div class="stat-card ${filtroAssunto === assunto ? 'active-filter' : ''}" onclick="filtrarPorAssunto('${assunto}')" data-assunto="${assunto}"><div class="stat-value">${qtd}</div><div class="stat-label">${assunto}</div></div>`;
+  });
+  
+  document.getElementById('stats').innerHTML = html;
+}
+
+// Importação Excel
+document.getElementById('importar').addEventListener('change', async function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      let importadas = 0;
+      
+      for (const row of json) {
+        const id = String(row.ID || '').trim();
+        if (!id || osExiste(id)) continue;
+        
+        const equipeRaw = row.EQUIPE || '';
+        const equipe = equipeRaw.split('/').map(t => t.trim().toUpperCase());
+        if (!equipe.length) continue;
+        
+        let data = row['DATA/HORA FECHAMENTO'] || '';
+        if (data.includes('/')) {
+          const parts = data.split(' ')[0].split('/');
+          if (parts.length === 3) data = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        }
+        
+        const os = { id, data: data || new Date().toISOString().split('T')[0], equipe, assunto: row.ASSUNTO || '', cidade: '', comissao: parseFloat(row['VALOR COMISSAO'] || 0) };
+        
+        await supabaseClient.from('os').insert({
+          id, equipe: os.equipe.join(' / '), assunto: os.assunto, data: os.data, cidade: os.cidade, comissao: os.comissao
+        });
+        
+        dados.push(os);
+        importadas++;
+      }
+      
+      if (tecnicoSelecionado) { atualizarTabela(); atualizarStats(); }
+      carregarTecnicos(); atualizarRanking();
+      alert(`✅ ${importadas} registros importados!`);
+    } catch (err) { alert('❌ Erro ao importar'); }
+  };
+  reader.readAsArrayBuffer(file); e.target.value = '';
+});
+
+function mostrarConfirmacao(titulo, mensagem, onConfirm) {
+  document.getElementById('confirmacaoTitulo').textContent = titulo;
+  document.getElementById('confirmacaoMensagem').textContent = mensagem;
+  callbackConfirmacao = onConfirm;
+  document.getElementById('overlayConfirmacao').classList.remove('hidden');
+  document.getElementById('modalConfirmacao').classList.remove('hidden');
+  document.getElementById('btnConfirmarAcao').onclick = () => { if (callbackConfirmacao) callbackConfirmacao(); fecharConfirmacao(); };
+}
+function fecharConfirmacao() {
+  document.getElementById('overlayConfirmacao').classList.add('hidden');
+  document.getElementById('modalConfirmacao').classList.add('hidden');
+  callbackConfirmacao = null;
+}
+
+document.getElementById('modalConfig').addEventListener('click', e => { if (e.target === e.currentTarget) fecharConfiguracoes(); });
+document.getElementById('modalDetalhamento').addEventListener('click', e => { if (e.target === e.currentTarget) fecharDetalhamento(); });
+document.getElementById('overlayConfirmacao').addEventListener('click', fecharConfirmacao);
+document.getElementById('loginSenha').addEventListener('keypress', e => { if (e.key === 'Enter') fazerLogin(); });
+document.getElementById('loginUsuario').addEventListener('keypress', e => { if (e.key === 'Enter') fazerLogin(); });
+
+inicializar();
+</script>
+</body>
+</html>
