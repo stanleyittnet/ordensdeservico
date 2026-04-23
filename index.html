@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-/* ========== CSS COMPLETO (MANTIDO EXATAMENTE IGUAL) ========== */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
@@ -191,14 +190,14 @@ input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; fo
       <button class="close-btn" onclick="fecharConfiguracoes()">&times;</button>
     </div>
     <div class="tabs" id="configTabs">
-      <button class="tab active" onclick="mudarTab('tecnicos')">👤 Técnicos</button>
-      <button class="tab" onclick="mudarTab('assuntos')">📋 Assuntos</button>
-      <button class="tab" onclick="mudarTab('cidades')">🏙️ Cidades</button>
-      <button class="tab" onclick="mudarTab('usuarios')">🔐 Usuários</button>
-      <button class="tab" onclick="mudarTab('importarOS')">📂 Importar OS</button>
-      <button class="tab" onclick="mudarTab('importarTecnicos')">📂 Importar Técnicos</button>
-      <button class="tab" onclick="mudarTab('importarAssuntos')">📂 Importar Assuntos</button>
-      <button class="tab" onclick="mudarTab('importarCidades')">📂 Importar Cidades</button>
+      <button class="tab active" onclick="mudarTab('Tecnicos')">👤 Técnicos</button>
+      <button class="tab" onclick="mudarTab('Assuntos')">📋 Assuntos</button>
+      <button class="tab" onclick="mudarTab('Cidades')">🏙️ Cidades</button>
+      <button class="tab" onclick="mudarTab('Usuarios')">🔐 Usuários</button>
+      <button class="tab" onclick="mudarTab('ImportarOS')">📂 Importar OS</button>
+      <button class="tab" onclick="mudarTab('ImportarTecnicos')">📂 Importar Técnicos</button>
+      <button class="tab" onclick="mudarTab('ImportarAssuntos')">📂 Importar Assuntos</button>
+      <button class="tab" onclick="mudarTab('ImportarCidades')">📂 Importar Cidades</button>
     </div>
     
     <!-- Tab Técnicos -->
@@ -472,7 +471,7 @@ async function carregarDadosSupabase() {
     if (tecData) {
       tecnicos = tecData.map(row => ({
         nome: String(row.nome || '').toUpperCase(),
-        ativo: row.ativo === true,
+        ativo: row.ativo === true || row.ativo === 'true',
         funcao: row.funcao || 'Auxiliar',
         apelido: row.apelido || row.nome?.split(' ')[0] || ''
       }));
@@ -680,272 +679,251 @@ function carregarTecnicos() {
   });
 }
 
-// ==================== IMPORTAÇÃO OS ====================
-document.getElementById('importarOSFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'array' });
-      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      
-      dadosImportacaoOS = [];
-      let preview = '';
-      
-      json.slice(0, 10).forEach(row => {
-        const id = String(row.ID || '').trim();
-        if (id) {
-          dadosImportacaoOS.push({
-            id, equipe: row.EQUIPE || '', assunto: row.ASSUNTO || '',
-            data: row['DATA/HORA FECHAMENTO'] || '', comissao: row['VALOR COMISSAO'] || 0
-          });
-          preview += `<tr><td>${id}</td><td>${row.EQUIPE || ''}</td><td>${row.ASSUNTO || ''}</td></tr>`;
-        }
-      });
-      
-      document.getElementById('importOSContent').innerHTML = `
-        <p><strong>Total:</strong> ${dadosImportacaoOS.length} registros</p>
-        <table><tr><th>ID</th><th>Equipe</th><th>Assunto</th></tr>${preview}</table>
-        ${dadosImportacaoOS.length > 10 ? '<p>... e mais</p>' : ''}
-      `;
-      document.getElementById('importOSPreview').classList.remove('hidden');
-    } catch (err) { alert('❌ Erro: ' + err.message); }
-  };
-  reader.readAsArrayBuffer(file);
-});
-
-async function confirmarImportacaoOS() {
-  if (!dadosImportacaoOS.length) { alert('Nenhum dado'); return; }
-  if (!confirm(`Importar ${dadosImportacaoOS.length} OS?`)) return;
-  
-  showLoading('Importando...');
-  let imp = 0, dup = 0;
-  
-  for (const r of dadosImportacaoOS) {
-    if (osExiste(r.id)) { dup++; continue; }
-    let data = r.data;
-    if (data.includes('/')) { const p = data.split(' ')[0].split('/'); if (p.length === 3) data = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; }
-    const eq = r.equipe.split('/').map(t => t.trim().toUpperCase());
-    
-    const { error } = await supabaseClient.from('os').insert({
-      id: r.id, equipe: eq.join(' / '), assunto: r.assunto,
-      data: data || new Date().toISOString().split('T')[0], cidade: '', comissao: parseFloat(r.comissao) || 0
-    });
-    if (!error) { dados.push({ id: r.id, equipe: eq, assunto: r.assunto, data: data, cidade: '', comissao: parseFloat(r.comissao) || 0 }); imp++; }
-  }
-  
-  hideLoading();
-  document.getElementById('importOSPreview').classList.add('hidden');
-  carregarTecnicos(); atualizarRanking();
-  alert(`✅ ${imp} importadas!\n⚠️ ${dup} duplicadas.`);
+// ==================== CRUD TÉCNICOS (CORRIGIDO) ====================
+function mostrarFormTecnico() {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  document.getElementById('formTecnico').classList.remove('hidden');
+  document.getElementById('nomeTecnicoInput').value = '';
+  document.querySelector('input[name="funcao"][value="Líder"]').checked = true;
+  document.getElementById('editTecnicoNome').value = '';
 }
 
-// ==================== IMPORTAÇÃO TÉCNICOS ====================
-document.getElementById('importarTecnicosFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'array' });
-      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      
-      dadosImportacaoTecnicos = [];
-      let preview = '';
-      
-      json.slice(0, 10).forEach(row => {
-        const nome = String(row.NOME || '').trim().toUpperCase();
-        if (nome) {
-          dadosImportacaoTecnicos.push({
-            nome, funcao: row.FUNCAO || 'Auxiliar', apelido: row.APELIDO || nome.split(' ')[0]
-          });
-          preview += `<tr><td>${nome}</td><td>${row.FUNCAO || 'Auxiliar'}</td></tr>`;
-        }
-      });
-      
-      document.getElementById('importTecnicosContent').innerHTML = `
-        <p><strong>Total:</strong> ${dadosImportacaoTecnicos.length} técnicos</p>
-        <table><tr><th>Nome</th><th>Função</th></tr>${preview}</table>
-      `;
-      document.getElementById('importTecnicosPreview').classList.remove('hidden');
-    } catch (err) { alert('❌ Erro: ' + err.message); }
-  };
-  reader.readAsArrayBuffer(file);
-});
-
-async function confirmarImportacaoTecnicos() {
-  if (!dadosImportacaoTecnicos.length) { alert('Nenhum dado'); return; }
-  if (!confirm(`Importar ${dadosImportacaoTecnicos.length} técnicos?`)) return;
-  
-  showLoading('Importando...');
-  let imp = 0;
-  
-  for (const t of dadosImportacaoTecnicos) {
-    const existe = tecnicos.some(tc => tc.nome === t.nome);
-    if (existe) continue;
-    
-    const { error } = await supabaseClient.from('tecnicos').insert({ nome: t.nome, ativo: true, funcao: t.funcao, apelido: t.apelido });
-    if (!error) { tecnicos.push({ nome: t.nome, ativo: true, funcao: t.funcao, apelido: t.apelido }); imp++; }
-  }
-  
-  hideLoading();
-  document.getElementById('importTecnicosPreview').classList.add('hidden');
-  carregarListaConfig(); carregarTecnicos();
-  alert(`✅ ${imp} técnicos importados!`);
+function cancelarFormTecnico() {
+  document.getElementById('formTecnico').classList.add('hidden');
+  document.getElementById('nomeTecnicoInput').value = '';
+  document.getElementById('editTecnicoNome').value = '';
 }
 
-// ==================== IMPORTAÇÃO ASSUNTOS ====================
-document.getElementById('importarAssuntosFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'array' });
-      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      
-      dadosImportacaoAssuntos = [];
-      let preview = '';
-      
-      json.slice(0, 10).forEach(row => {
-        const nome = String(row.NOME || '').trim().toUpperCase();
-        const valor = parseFloat(row.VALOR) || 0;
-        if (nome && valor > 0) {
-          dadosImportacaoAssuntos.push({ nome, valor });
-          preview += `<tr><td>${nome}</td><td>R$ ${valor.toFixed(2)}</td></tr>`;
-        }
-      });
-      
-      document.getElementById('importAssuntosContent').innerHTML = `
-        <p><strong>Total:</strong> ${dadosImportacaoAssuntos.length} assuntos</p>
-        <table><tr><th>Nome</th><th>Valor</th></tr>${preview}</table>
-      `;
-      document.getElementById('importAssuntosPreview').classList.remove('hidden');
-    } catch (err) { alert('❌ Erro: ' + err.message); }
-  };
-  reader.readAsArrayBuffer(file);
-});
-
-async function confirmarImportacaoAssuntos() {
-  if (!dadosImportacaoAssuntos.length) { alert('Nenhum dado'); return; }
-  if (!confirm(`Importar ${dadosImportacaoAssuntos.length} assuntos?`)) return;
-  
-  showLoading('Importando...');
-  let imp = 0;
-  
-  for (const a of dadosImportacaoAssuntos) {
-    const { error } = await supabaseClient.from('assuntos').upsert({ nome: a.nome, valor: a.valor }, { onConflict: 'nome' });
-    if (!error) { assuntosMap[a.nome] = a.valor; imp++; }
-  }
-  
-  hideLoading();
-  document.getElementById('importAssuntosPreview').classList.add('hidden');
-  carregarListaAssuntos(); carregarAssuntos();
-  alert(`✅ ${imp} assuntos importados!`);
-}
-
-// ==================== IMPORTAÇÃO CIDADES ====================
-document.getElementById('importarCidadesFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'array' });
-      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      
-      dadosImportacaoCidades = [];
-      let preview = '';
-      
-      json.slice(0, 10).forEach(row => {
-        const nome = String(row.NOME || '').trim();
-        if (nome) {
-          const cidade = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-          dadosImportacaoCidades.push(cidade);
-          preview += `<tr><td>${cidade}</td></tr>`;
-        }
-      });
-      
-      document.getElementById('importCidadesContent').innerHTML = `
-        <p><strong>Total:</strong> ${dadosImportacaoCidades.length} cidades</p>
-        <table><tr><th>Nome</th></tr>${preview}</table>
-      `;
-      document.getElementById('importCidadesPreview').classList.remove('hidden');
-    } catch (err) { alert('❌ Erro: ' + err.message); }
-  };
-  reader.readAsArrayBuffer(file);
-});
-
-async function confirmarImportacaoCidades() {
-  if (!dadosImportacaoCidades.length) { alert('Nenhum dado'); return; }
-  if (!confirm(`Importar ${dadosImportacaoCidades.length} cidades?`)) return;
-  
-  showLoading('Importando...');
-  let imp = 0;
-  
-  for (const c of dadosImportacaoCidades) {
-    const { error } = await supabaseClient.from('cidades').upsert({ nome: c }, { onConflict: 'nome' });
-    if (!error) { if (!cidades.includes(c)) cidades.push(c); imp++; }
-  }
-  
-  hideLoading();
-  document.getElementById('importCidadesPreview').classList.add('hidden');
-  carregarListaCidades(); carregarCidades();
-  alert(`✅ ${imp} cidades importadas!`);
-}
-
-// ==================== CRUDs (mantidos iguais) ====================
 async function salvarTecnico() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  
   const nome = document.getElementById('nomeTecnicoInput').value.trim().toUpperCase();
   const funcao = document.querySelector('input[name="funcao"]:checked')?.value || 'Auxiliar';
   const editNome = document.getElementById('editTecnicoNome').value;
+  
   if (!nome) { alert('Digite o nome'); return; }
-  const tecnico = { nome, ativo: true, funcao, apelido: nome.split(' ')[0] };
+  
+  showLoading('Salvando técnico...');
+  
+  const tecnico = { 
+    nome, 
+    ativo: true, 
+    funcao, 
+    apelido: nome.split(' ')[0] 
+  };
+  
+  let error;
   if (editNome) {
-    await supabaseClient.from('tecnicos').update(tecnico).eq('nome', editNome);
+    const { error: err } = await supabaseClient.from('tecnicos').update(tecnico).eq('nome', editNome);
+    error = err;
   } else {
-    await supabaseClient.from('tecnicos').insert(tecnico);
+    const { error: err } = await supabaseClient.from('tecnicos').insert(tecnico);
+    error = err;
   }
-  await carregarDadosSupabase();
-  carregarListaConfig(); carregarTecnicos(); cancelarFormTecnico();
+  
+  if (error) {
+    console.error('Erro Supabase:', error);
+    alert('❌ Erro ao salvar: ' + error.message);
+  } else {
+    await carregarDadosSupabase();
+    carregarListaConfig();
+    carregarTecnicos();
+    cancelarFormTecnico();
+    alert('✅ Técnico salvo com sucesso!');
+  }
+  
+  hideLoading();
 }
 
+function editarTecnico(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  const t = tecnicos.find(tn => tn.nome === nome);
+  if (!t) { alert('Técnico não encontrado'); return; }
+  
+  document.getElementById('nomeTecnicoInput').value = t.nome;
+  document.querySelector(`input[name="funcao"][value="${t.funcao || 'Auxiliar'}"]`).checked = true;
+  document.getElementById('editTecnicoNome').value = nome;
+  document.getElementById('formTecnico').classList.remove('hidden');
+}
+
+async function toggleStatusTecnico(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  const t = tecnicos.find(tn => tn.nome === nome);
+  if (!t) return;
+  
+  showLoading('Alterando status...');
+  const { error } = await supabaseClient.from('tecnicos').update({ ativo: !t.ativo }).eq('nome', nome);
+  
+  if (error) {
+    alert('❌ Erro: ' + error.message);
+  } else {
+    await carregarDadosSupabase();
+    carregarListaConfig();
+    carregarTecnicos();
+  }
+  hideLoading();
+}
+
+async function excluirTecnico(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  if (!confirm(`Excluir ${nome}?`)) return;
+  
+  showLoading('Excluindo...');
+  const { error } = await supabaseClient.from('tecnicos').delete().eq('nome', nome);
+  
+  if (error) {
+    alert('❌ Erro: ' + error.message);
+  } else {
+    await carregarDadosSupabase();
+    carregarListaConfig();
+    carregarTecnicos();
+  }
+  hideLoading();
+}
+
+function carregarListaConfig() {
+  const lista = document.getElementById('listaTecnicosConfig');
+  if (!lista) return;
+  
+  lista.innerHTML = '';
+  tecnicos.sort((a, b) => a.nome.localeCompare(b.nome)).forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'tecnico-item';
+    div.innerHTML = `
+      <div style="flex:1;">
+        <strong>${t.nome}</strong>
+        <div style="margin-top:5px;">
+          <span class="funcao-badge ${t.funcao==='Líder'?'funcao-lider':'funcao-auxiliar'}" style="position:static;">${t.funcao||'Auxiliar'}</span>
+          <span class="status-badge" style="position:static;margin-left:5px;background:${t.ativo?'#28a745':'#dc3545'};color:white;padding:2px 8px;border-radius:12px;">${t.ativo?'Ativo':'Inativo'}</span>
+        </div>
+      </div>
+      <div class="tecnico-actions">
+        <button class="btn-warning" onclick="editarTecnico('${t.nome}')" style="padding:6px 10px;">✏️</button>
+        <button class="${t.ativo?'btn-secondary':'btn-success'}" onclick="toggleStatusTecnico('${t.nome}')" style="padding:6px 10px;">${t.ativo?'🔴':'🟢'}</button>
+        <button class="btn-danger" onclick="excluirTecnico('${t.nome}')" style="padding:6px 10px;">🗑️</button>
+      </div>
+    `;
+    lista.appendChild(div);
+  });
+}
+
+// ==================== CRUD ASSUNTOS ====================
 async function salvarAssunto() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
   const nome = document.getElementById('nomeAssuntoInput').value.trim().toUpperCase();
   const valor = parseFloat(document.getElementById('valorAssuntoInput').value);
   const editNome = document.getElementById('editAssuntoNome').value;
   if (!nome || valor <= 0) { alert('Dados inválidos'); return; }
+  showLoading('Salvando...');
+  let error;
   if (editNome) {
-    await supabaseClient.from('assuntos').update({ nome, valor }).eq('nome', editNome);
+    const { error: err } = await supabaseClient.from('assuntos').update({ nome, valor }).eq('nome', editNome);
+    error = err;
   } else {
-    await supabaseClient.from('assuntos').insert({ nome, valor });
+    const { error: err } = await supabaseClient.from('assuntos').insert({ nome, valor });
+    error = err;
   }
-  await carregarDadosSupabase();
-  carregarListaAssuntos(); carregarAssuntos(); cancelarFormAssunto();
+  if (error) { alert('❌ Erro: ' + error.message); }
+  else { await carregarDadosSupabase(); carregarListaAssuntos(); carregarAssuntos(); cancelarFormAssunto(); alert('✅ Assunto salvo!'); }
+  hideLoading();
 }
 
+function editarAssunto(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  document.getElementById('nomeAssuntoInput').value = nome;
+  document.getElementById('valorAssuntoInput').value = assuntosMap[nome];
+  document.getElementById('editAssuntoNome').value = nome;
+  document.getElementById('formAssunto').classList.remove('hidden');
+}
+
+async function excluirAssunto(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  if (!confirm(`Excluir "${nome}"?`)) return;
+  showLoading('Excluindo...');
+  const { error } = await supabaseClient.from('assuntos').delete().eq('nome', nome);
+  if (error) { alert('❌ Erro: ' + error.message); }
+  else { await carregarDadosSupabase(); carregarListaAssuntos(); carregarAssuntos(); }
+  hideLoading();
+}
+
+function carregarListaAssuntos() {
+  const lista = document.getElementById('listaAssuntosConfig');
+  if (!lista) return;
+  lista.innerHTML = '';
+  Object.entries(assuntosMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([n,v]) => {
+    const d = document.createElement('div'); d.className = 'assunto-item';
+    d.innerHTML = `<div><strong>${n}</strong><br><small>R$ ${v.toFixed(2)}</small></div><div class="assunto-actions"><button class="btn-warning" onclick="editarAssunto('${n}')">✏️</button><button class="btn-danger" onclick="excluirAssunto('${n}')">🗑️</button></div>`;
+    lista.appendChild(d);
+  });
+}
+
+function mostrarFormAssunto() {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  document.getElementById('formAssunto').classList.remove('hidden');
+  document.getElementById('nomeAssuntoInput').value = '';
+  document.getElementById('valorAssuntoInput').value = '';
+  document.getElementById('editAssuntoNome').value = '';
+}
+function cancelarFormAssunto() { document.getElementById('formAssunto').classList.add('hidden'); }
+
+// ==================== CRUD CIDADES ====================
 async function salvarCidade() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
   const nome = document.getElementById('nomeCidadeInput').value.trim();
   const editNome = document.getElementById('editCidadeNome').value;
   if (!nome) { alert('Digite o nome'); return; }
   const cidade = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+  showLoading('Salvando...');
+  let error;
   if (editNome) {
-    await supabaseClient.from('cidades').update({ nome: cidade }).eq('nome', editNome);
+    const { error: err } = await supabaseClient.from('cidades').update({ nome: cidade }).eq('nome', editNome);
+    error = err;
   } else {
-    await supabaseClient.from('cidades').insert({ nome: cidade });
+    const { error: err } = await supabaseClient.from('cidades').insert({ nome: cidade });
+    error = err;
   }
-  await carregarDadosSupabase();
-  carregarListaCidades(); carregarCidades(); cancelarFormCidade();
+  if (error) { alert('❌ Erro: ' + error.message); }
+  else { await carregarDadosSupabase(); carregarListaCidades(); carregarCidades(); cancelarFormCidade(); alert('✅ Cidade salva!'); }
+  hideLoading();
 }
 
+function editarCidade(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  document.getElementById('nomeCidadeInput').value = nome;
+  document.getElementById('editCidadeNome').value = nome;
+  document.getElementById('formCidade').classList.remove('hidden');
+}
+
+async function excluirCidade(nome) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  if (!confirm(`Excluir ${nome}?`)) return;
+  showLoading('Excluindo...');
+  const { error } = await supabaseClient.from('cidades').delete().eq('nome', nome);
+  if (error) { alert('❌ Erro: ' + error.message); }
+  else { await carregarDadosSupabase(); carregarListaCidades(); carregarCidades(); }
+  hideLoading();
+}
+
+function carregarListaCidades() {
+  const lista = document.getElementById('listaCidadesConfig');
+  if (!lista) return;
+  lista.innerHTML = '';
+  cidades.sort().forEach(c => {
+    const d = document.createElement('div'); d.className = 'cidade-item';
+    d.innerHTML = `<div><strong>${c}</strong></div><div class="cidade-actions"><button class="btn-warning" onclick="editarCidade('${c}')">✏️</button><button class="btn-danger" onclick="excluirCidade('${c}')">🗑️</button></div>`;
+    lista.appendChild(d);
+  });
+}
+
+function mostrarFormCidade() {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  document.getElementById('formCidade').classList.remove('hidden');
+  document.getElementById('nomeCidadeInput').value = '';
+  document.getElementById('editCidadeNome').value = '';
+}
+function cancelarFormCidade() { document.getElementById('formCidade').classList.add('hidden'); }
+
+// ==================== CRUD USUÁRIOS ====================
 async function salvarUsuario() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
   const usuario = document.getElementById('usuarioInput').value.trim();
@@ -955,50 +933,49 @@ async function salvarUsuario() {
   const editUsuario = document.getElementById('editUsuarioNome').value;
   if (!usuario) { alert('Digite o usuário'); return; }
   if (!editUsuario && !senha) { alert('Digite a senha'); return; }
+  showLoading('Salvando...');
   const userData = { usuario, tipo, tecnico_vinculado: tecnicoVinculado || null };
   if (senha) userData.senha = senha;
+  let error;
   if (editUsuario) {
-    await supabaseClient.from('usuarios').update(userData).eq('usuario', editUsuario);
+    const { error: err } = await supabaseClient.from('usuarios').update(userData).eq('usuario', editUsuario);
+    error = err;
   } else {
-    await supabaseClient.from('usuarios').insert(userData);
+    const { error: err } = await supabaseClient.from('usuarios').insert(userData);
+    error = err;
   }
-  await carregarDadosSupabase();
-  carregarListaUsuarios(); cancelarFormUsuario();
+  if (error) { alert('❌ Erro: ' + error.message); }
+  else { await carregarDadosSupabase(); carregarListaUsuarios(); cancelarFormUsuario(); alert('✅ Usuário salvo!'); }
+  hideLoading();
 }
 
-// ==================== FUNÇÕES AUXILIARES ====================
-function carregarListaConfig() {
-  const lista = document.getElementById('listaTecnicosConfig');
-  lista.innerHTML = '';
-  tecnicos.sort((a, b) => a.nome.localeCompare(b.nome)).forEach(t => {
-    const d = document.createElement('div'); d.className = 'tecnico-item';
-    d.innerHTML = `<div style="flex:1;"><strong>${t.nome}</strong><div style="margin-top:5px;"><span class="funcao-badge ${t.funcao==='Líder'?'funcao-lider':'funcao-auxiliar'}" style="position:static;">${t.funcao||'Auxiliar'}</span><span class="status-badge" style="position:static;margin-left:5px;background:${t.ativo?'#28a745':'#dc3545'};color:white;padding:2px 8px;border-radius:12px;">${t.ativo?'Ativo':'Inativo'}</span></div></div><div class="tecnico-actions"><button class="btn-warning" onclick="editarTecnico('${t.nome}')">✏️</button><button class="${t.ativo?'btn-secondary':'btn-success'}" onclick="toggleStatusTecnico('${t.nome}')">${t.ativo?'🔴':'🟢'}</button><button class="btn-danger" onclick="excluirTecnico('${t.nome}')">🗑️</button></div>`;
-    lista.appendChild(d);
-  });
+function editarUsuario(usuario) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  const u = usuarios.find(us => us.usuario === usuario);
+  if (!u) return;
+  document.getElementById('usuarioInput').value = u.usuario;
+  document.getElementById('senhaInput').value = '';
+  document.querySelector(`input[name="tipoUsuario"][value="${u.tipo}"]`).checked = true;
+  document.getElementById('editUsuarioNome').value = usuario;
+  carregarSelectTecnicos();
+  document.getElementById('tecnicoVinculadoSelect').value = u.tecnico_vinculado || '';
+  document.getElementById('formUsuario').classList.remove('hidden');
 }
 
-function carregarListaAssuntos() {
-  const lista = document.getElementById('listaAssuntosConfig');
-  lista.innerHTML = '';
-  Object.entries(assuntosMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([n,v]) => {
-    const d = document.createElement('div'); d.className = 'assunto-item';
-    d.innerHTML = `<div><strong>${n}</strong><br><small>R$ ${v.toFixed(2)}</small></div><div class="assunto-actions"><button class="btn-warning" onclick="editarAssunto('${n}')">✏️</button><button class="btn-danger" onclick="excluirAssunto('${n}')">🗑️</button></div>`;
-    lista.appendChild(d);
-  });
-}
-
-function carregarListaCidades() {
-  const lista = document.getElementById('listaCidadesConfig');
-  lista.innerHTML = '';
-  cidades.sort().forEach(c => {
-    const d = document.createElement('div'); d.className = 'cidade-item';
-    d.innerHTML = `<div><strong>${c}</strong></div><div class="cidade-actions"><button class="btn-warning" onclick="editarCidade('${c}')">✏️</button><button class="btn-danger" onclick="excluirCidade('${c}')">🗑️</button></div>`;
-    lista.appendChild(d);
-  });
+async function excluirUsuario(usuario) {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  if (usuario === 'admin') { alert('Admin não pode ser excluído!'); return; }
+  if (!confirm(`Excluir ${usuario}?`)) return;
+  showLoading('Excluindo...');
+  const { error } = await supabaseClient.from('usuarios').delete().eq('usuario', usuario);
+  if (error) { alert('❌ Erro: ' + error.message); }
+  else { await carregarDadosSupabase(); carregarListaUsuarios(); }
+  hideLoading();
 }
 
 function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuariosConfig');
+  if (!lista) return;
   lista.innerHTML = '';
   usuarios.forEach(u => {
     const d = document.createElement('div'); d.className = 'usuario-item';
@@ -1007,22 +984,39 @@ function carregarListaUsuarios() {
   });
 }
 
+function mostrarFormUsuario() {
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
+  document.getElementById('formUsuario').classList.remove('hidden');
+  document.getElementById('usuarioInput').value = '';
+  document.getElementById('senhaInput').value = '';
+  document.querySelector('input[name="tipoUsuario"][value="tecnico"]').checked = true;
+  document.getElementById('editUsuarioNome').value = '';
+  carregarSelectTecnicos();
+}
+function cancelarFormUsuario() { document.getElementById('formUsuario').classList.add('hidden'); }
+
 function carregarSelectTecnicos() {
   const select = document.getElementById('tecnicoVinculadoSelect');
+  if (!select) return;
   select.innerHTML = '<option value="">Vincular a um técnico (opcional)</option>';
   tecnicos.filter(t => t.ativo).forEach(t => {
-    const opt = document.createElement('option'); opt.value = t.nome; opt.textContent = t.nome; select.appendChild(opt);
+    const opt = document.createElement('option');
+    opt.value = t.nome;
+    opt.textContent = t.nome;
+    select.appendChild(opt);
   });
 }
 
 function carregarCidades() {
   const sel = document.getElementById('cidade');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Selecione a Cidade</option>';
   cidades.sort().forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
 }
 
 function carregarAssuntos() {
   const sel = document.getElementById('assunto');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Selecione o Assunto</option>';
   Object.entries(assuntosMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([n,v]) => {
     const o = document.createElement('option'); o.value = n; o.textContent = `${n} (R$ ${v.toFixed(2)})`; sel.appendChild(o);
@@ -1046,27 +1040,6 @@ function mostrarDetalhamento(nome) {
 }
 
 function fecharDetalhamento() { document.getElementById('modalDetalhamento').classList.add('hidden'); }
-
-function mostrarFormTecnico() { document.getElementById('formTecnico').classList.remove('hidden'); document.getElementById('nomeTecnicoInput').value = ''; document.querySelector('input[name="funcao"][value="Líder"]').checked = true; document.getElementById('editTecnicoNome').value = ''; }
-function cancelarFormTecnico() { document.getElementById('formTecnico').classList.add('hidden'); }
-function editarTecnico(nome) { const t = tecnicos.find(tn => tn.nome === nome); document.getElementById('nomeTecnicoInput').value = t.nome; document.querySelector(`input[name="funcao"][value="${t.funcao||'Auxiliar'}"]`).checked = true; document.getElementById('editTecnicoNome').value = nome; document.getElementById('formTecnico').classList.remove('hidden'); }
-async function toggleStatusTecnico(nome) { const t = tecnicos.find(tn => tn.nome === nome); await supabaseClient.from('tecnicos').update({ ativo: !t.ativo }).eq('nome', nome); await carregarDadosSupabase(); carregarListaConfig(); carregarTecnicos(); }
-async function excluirTecnico(nome) { if (!confirm(`Excluir ${nome}?`)) return; await supabaseClient.from('tecnicos').delete().eq('nome', nome); await carregarDadosSupabase(); carregarListaConfig(); carregarTecnicos(); }
-
-function mostrarFormAssunto() { document.getElementById('formAssunto').classList.remove('hidden'); document.getElementById('nomeAssuntoInput').value = ''; document.getElementById('valorAssuntoInput').value = ''; document.getElementById('editAssuntoNome').value = ''; }
-function cancelarFormAssunto() { document.getElementById('formAssunto').classList.add('hidden'); }
-function editarAssunto(nome) { document.getElementById('nomeAssuntoInput').value = nome; document.getElementById('valorAssuntoInput').value = assuntosMap[nome]; document.getElementById('editAssuntoNome').value = nome; document.getElementById('formAssunto').classList.remove('hidden'); }
-async function excluirAssunto(nome) { if (!confirm(`Excluir "${nome}"?`)) return; await supabaseClient.from('assuntos').delete().eq('nome', nome); await carregarDadosSupabase(); carregarListaAssuntos(); carregarAssuntos(); }
-
-function mostrarFormCidade() { document.getElementById('formCidade').classList.remove('hidden'); document.getElementById('nomeCidadeInput').value = ''; document.getElementById('editCidadeNome').value = ''; }
-function cancelarFormCidade() { document.getElementById('formCidade').classList.add('hidden'); }
-function editarCidade(nome) { document.getElementById('nomeCidadeInput').value = nome; document.getElementById('editCidadeNome').value = nome; document.getElementById('formCidade').classList.remove('hidden'); }
-async function excluirCidade(nome) { if (!confirm(`Excluir ${nome}?`)) return; await supabaseClient.from('cidades').delete().eq('nome', nome); await carregarDadosSupabase(); carregarListaCidades(); carregarCidades(); }
-
-function mostrarFormUsuario() { document.getElementById('formUsuario').classList.remove('hidden'); document.getElementById('usuarioInput').value = ''; document.getElementById('senhaInput').value = ''; document.querySelector('input[name="tipoUsuario"][value="tecnico"]').checked = true; document.getElementById('editUsuarioNome').value = ''; carregarSelectTecnicos(); }
-function cancelarFormUsuario() { document.getElementById('formUsuario').classList.add('hidden'); }
-function editarUsuario(usuario) { const u = usuarios.find(us => us.usuario === usuario); document.getElementById('usuarioInput').value = u.usuario; document.getElementById('senhaInput').value = ''; document.querySelector(`input[name="tipoUsuario"][value="${u.tipo}"]`).checked = true; document.getElementById('editUsuarioNome').value = usuario; carregarSelectTecnicos(); document.getElementById('tecnicoVinculadoSelect').value = u.tecnico_vinculado || ''; document.getElementById('formUsuario').classList.remove('hidden'); }
-async function excluirUsuario(usuario) { if (usuario === 'admin') { alert('Admin não pode ser excluído!'); return; } if (!confirm(`Excluir ${usuario}?`)) return; await supabaseClient.from('usuarios').delete().eq('usuario', usuario); await carregarDadosSupabase(); carregarListaUsuarios(); }
 
 function mudarTab(tab) {
   document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
@@ -1148,6 +1121,138 @@ function atualizarStats() {
   let html = `<div class="stat-card" onclick="limparFiltro()"><div class="stat-value">${baseF.length}</div><div class="stat-label">Total OS</div></div><div class="stat-card" onclick="mostrarDetalhamento('${tecnicoSelecionado}')"><div class="stat-value">R$ ${totalCom.toFixed(2)}</div><div class="stat-label">Comissões</div></div>`;
   Object.entries(porAssunto).sort((a,b)=>b[1]-a[1]).forEach(([a,q]) => { html += `<div class="stat-card ${filtroAssunto===a?'active-filter':''}" onclick="filtrarPorAssunto('${a}')" data-assunto="${a}"><div class="stat-value">${q}</div><div class="stat-label">${a}</div></div>`; });
   document.getElementById('stats').innerHTML = html;
+}
+
+// ==================== IMPORTAÇÃO OS ====================
+document.getElementById('importarOSFile')?.addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      dadosImportacaoOS = []; let preview = '';
+      json.slice(0, 10).forEach(row => {
+        const id = String(row.ID || '').trim();
+        if (id) { dadosImportacaoOS.push({ id, equipe: row.EQUIPE || '', assunto: row.ASSUNTO || '', data: row['DATA/HORA FECHAMENTO'] || '', comissao: row['VALOR COMISSAO'] || 0 }); preview += `<tr><td>${id}</td><td>${row.EQUIPE || ''}</td><td>${row.ASSUNTO || ''}</td></tr>`; }
+      });
+      document.getElementById('importOSContent').innerHTML = `<p><strong>Total:</strong> ${dadosImportacaoOS.length} registros</p><table><tr><th>ID</th><th>Equipe</th><th>Assunto</th></tr>${preview}</table>`;
+      document.getElementById('importOSPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoOS() {
+  if (!dadosImportacaoOS.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoOS.length} OS?`)) return;
+  showLoading('Importando...'); let imp = 0, dup = 0;
+  for (const r of dadosImportacaoOS) {
+    if (osExiste(r.id)) { dup++; continue; }
+    let data = r.data; if (data.includes('/')) { const p = data.split(' ')[0].split('/'); if (p.length === 3) data = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; }
+    const eq = r.equipe.split('/').map(t => t.trim().toUpperCase());
+    const { error } = await supabaseClient.from('os').insert({ id: r.id, equipe: eq.join(' / '), assunto: r.assunto, data: data || new Date().toISOString().split('T')[0], cidade: '', comissao: parseFloat(r.comissao) || 0 });
+    if (!error) { dados.push({ id: r.id, equipe: eq, assunto: r.assunto, data: data, cidade: '', comissao: parseFloat(r.comissao) || 0 }); imp++; }
+  }
+  hideLoading(); document.getElementById('importOSPreview').classList.add('hidden');
+  carregarTecnicos(); atualizarRanking(); alert(`✅ ${imp} importadas!\n⚠️ ${dup} duplicadas.`);
+}
+
+// ==================== IMPORTAÇÃO TÉCNICOS ====================
+document.getElementById('importarTecnicosFile')?.addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      dadosImportacaoTecnicos = []; let preview = '';
+      json.slice(0, 10).forEach(row => {
+        const nome = String(row.NOME || '').trim().toUpperCase();
+        if (nome) { dadosImportacaoTecnicos.push({ nome, funcao: row.FUNCAO || 'Auxiliar', apelido: row.APELIDO || nome.split(' ')[0] }); preview += `<tr><td>${nome}</td><td>${row.FUNCAO || 'Auxiliar'}</td></tr>`; }
+      });
+      document.getElementById('importTecnicosContent').innerHTML = `<p><strong>Total:</strong> ${dadosImportacaoTecnicos.length} técnicos</p><table><tr><th>Nome</th><th>Função</th></tr>${preview}</table>`;
+      document.getElementById('importTecnicosPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoTecnicos() {
+  if (!dadosImportacaoTecnicos.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoTecnicos.length} técnicos?`)) return;
+  showLoading('Importando...'); let imp = 0;
+  for (const t of dadosImportacaoTecnicos) {
+    const existe = tecnicos.some(tc => tc.nome === t.nome); if (existe) continue;
+    const { error } = await supabaseClient.from('tecnicos').insert({ nome: t.nome, ativo: true, funcao: t.funcao, apelido: t.apelido });
+    if (!error) { tecnicos.push({ nome: t.nome, ativo: true, funcao: t.funcao, apelido: t.apelido }); imp++; }
+  }
+  hideLoading(); document.getElementById('importTecnicosPreview').classList.add('hidden');
+  carregarListaConfig(); carregarTecnicos(); alert(`✅ ${imp} técnicos importados!`);
+}
+
+// ==================== IMPORTAÇÃO ASSUNTOS ====================
+document.getElementById('importarAssuntosFile')?.addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      dadosImportacaoAssuntos = []; let preview = '';
+      json.slice(0, 10).forEach(row => {
+        const nome = String(row.NOME || '').trim().toUpperCase(); const valor = parseFloat(row.VALOR) || 0;
+        if (nome && valor > 0) { dadosImportacaoAssuntos.push({ nome, valor }); preview += `<tr><td>${nome}</td><td>R$ ${valor.toFixed(2)}</td></tr>`; }
+      });
+      document.getElementById('importAssuntosContent').innerHTML = `<p><strong>Total:</strong> ${dadosImportacaoAssuntos.length} assuntos</p><table><tr><th>Nome</th><th>Valor</th></tr>${preview}</table>`;
+      document.getElementById('importAssuntosPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoAssuntos() {
+  if (!dadosImportacaoAssuntos.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoAssuntos.length} assuntos?`)) return;
+  showLoading('Importando...'); let imp = 0;
+  for (const a of dadosImportacaoAssuntos) {
+    const { error } = await supabaseClient.from('assuntos').upsert({ nome: a.nome, valor: a.valor }, { onConflict: 'nome' });
+    if (!error) { assuntosMap[a.nome] = a.valor; imp++; }
+  }
+  hideLoading(); document.getElementById('importAssuntosPreview').classList.add('hidden');
+  carregarListaAssuntos(); carregarAssuntos(); alert(`✅ ${imp} assuntos importados!`);
+}
+
+// ==================== IMPORTAÇÃO CIDADES ====================
+document.getElementById('importarCidadesFile')?.addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      dadosImportacaoCidades = []; let preview = '';
+      json.slice(0, 10).forEach(row => {
+        const nome = String(row.NOME || '').trim();
+        if (nome) { const cidade = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase(); dadosImportacaoCidades.push(cidade); preview += `<tr><td>${cidade}</td></tr>`; }
+      });
+      document.getElementById('importCidadesContent').innerHTML = `<p><strong>Total:</strong> ${dadosImportacaoCidades.length} cidades</p><table><tr><th>Nome</th></tr>${preview}</table>`;
+      document.getElementById('importCidadesPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoCidades() {
+  if (!dadosImportacaoCidades.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoCidades.length} cidades?`)) return;
+  showLoading('Importando...'); let imp = 0;
+  for (const c of dadosImportacaoCidades) {
+    const { error } = await supabaseClient.from('cidades').upsert({ nome: c }, { onConflict: 'nome' });
+    if (!error) { if (!cidades.includes(c)) cidades.push(c); imp++; }
+  }
+  hideLoading(); document.getElementById('importCidadesPreview').classList.add('hidden');
+  carregarListaCidades(); carregarCidades(); alert(`✅ ${imp} cidades importadas!`);
 }
 
 function mostrarConfirmacao(titulo, mensagem, onConfirm) {
