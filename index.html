@@ -115,6 +115,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .tecnico-item, .assunto-item, .cidade-item, .usuario-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: white; flex-wrap: wrap; gap: 10px; }
 .tecnico-actions, .assunto-actions, .cidade-actions, .usuario-actions { display: flex; gap: 5px; flex-wrap: wrap; }
 
+#importContainer { padding: 20px; text-align: center; background: #f8f9fa; border-radius: 8px; }
+#importContainer input { margin-bottom: 20px; }
+.import-preview { max-height: 300px; overflow-y: auto; margin-top: 20px; background: white; border-radius: 8px; padding: 10px; }
+
 #formOS { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 12px; }
 input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; width: 100%; min-height: 44px; background-color: white; }
 .radio-group { display: flex; gap: 20px; margin: 10px 0; flex-wrap: wrap; }
@@ -187,7 +191,8 @@ input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; fo
       <button class="tab active" onclick="mudarTab('tecnicos')">👤 Técnicos</button>
       <button class="tab" onclick="mudarTab('assuntos')">📋 Assuntos</button>
       <button class="tab" onclick="mudarTab('cidades')">🏙️ Cidades</button>
-      <button class="tab" onclick="mudarTab('usuarios')" id="tabUsuariosBtn">🔐 Usuários</button>
+      <button class="tab" onclick="mudarTab('usuarios')">🔐 Usuários</button>
+      <button class="tab" onclick="mudarTab('importar')">📂 Importar OS</button>
     </div>
     
     <!-- Tab Técnicos -->
@@ -259,6 +264,21 @@ input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; fo
       <div id="listaUsuariosConfig"></div>
     </div>
     
+    <!-- Tab Importar OS -->
+    <div id="tabImportar" class="tab-content hidden">
+      <div id="importContainer">
+        <h3 style="margin-bottom: 20px;">📂 Importar Ordens de Serviço</h3>
+        <p style="margin-bottom: 20px; color: #666;">Selecione um arquivo Excel (.xlsx ou .xls) com as colunas: ID, EQUIPE, ASSUNTO, DATA/HORA FECHAMENTO, VALOR COMISSAO</p>
+        <input type="file" id="importarExcelConfig" accept=".xlsx,.xls" style="display: block; margin: 0 auto 20px; max-width: 300px;">
+        <button class="btn-primary" onclick="document.getElementById('importarExcelConfig').click()">📁 Selecionar Arquivo</button>
+        <div id="importPreview" class="import-preview hidden">
+          <h4>Pré-visualização:</h4>
+          <div id="previewContent"></div>
+          <button class="btn-success" onclick="confirmarImportacao()" style="margin-top: 20px;">✅ Confirmar Importação</button>
+        </div>
+      </div>
+    </div>
+    
     <div style="margin-top: 20px; text-align: right;">
       <button class="btn-primary" onclick="fecharConfiguracoes()">Fechar</button>
     </div>
@@ -280,11 +300,6 @@ input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; fo
 
 <div class="container" id="home">
   <h2 style="color: white; margin-bottom: 15px; font-size: 20px;">Selecione o Técnico</h2>
-  
-  <button class="btn-primary" id="btnImportar" onclick="document.getElementById('importar').click()" style="width: 100%; margin-bottom: 15px;">
-    📂 Importar Arquivo Excel
-  </button>
-  <input type="file" id="importar" accept=".xlsx,.xls" style="display:none">
   
   <div class="ranking-container" id="rankingContainer">
     <div class="ranking-header">
@@ -358,6 +373,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let usuarioLogado = null;
 let usuarios = [{ usuario: "admin", senha: "admin123", tipo: "admin", tecnico_vinculado: null }];
 let dados = [];
+let dadosImportados = [];
 let tecnicoSelecionado = "";
 let editandoIndex = -1;
 let filtroAssunto = null;
@@ -489,10 +505,8 @@ async function fazerLogin() {
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('userDisplay').textContent = `${user.usuario} (${user.tipo === 'admin' ? 'ADMIN' : 'Técnico'})`;
     
-    // Controle de acesso
     const isAdmin = user.tipo === 'admin';
     document.getElementById('configBtn').style.display = isAdmin ? 'flex' : 'none';
-    document.getElementById('btnImportar').style.display = isAdmin ? 'block' : 'none';
     
     inicializar();
   } else {
@@ -538,7 +552,6 @@ function atualizarRanking() {
   const rankingList = document.getElementById('rankingList');
   const totalOSGeral = document.getElementById('totalOSGeral');
   
-  // Para técnico, mostrar apenas suas OS
   let osParaRanking = dados;
   if (usuarioLogado?.tipo === 'tecnico' && usuarioLogado?.tecnico_vinculado) {
     osParaRanking = dados.filter(os => os.equipe?.some(e => e.includes(usuarioLogado.tecnico_vinculado.split(' ')[0]) || usuarioLogado.tecnico_vinculado.includes(e)));
@@ -589,8 +602,6 @@ function carregarTecnicos() {
   lista.innerHTML = '';
   
   let tecnicosParaMostrar = tecnicos.filter(t => t.ativo);
-  
-  // Se for técnico, mostrar apenas o técnico vinculado
   if (usuarioLogado?.tipo === 'tecnico' && usuarioLogado?.tecnico_vinculado) {
     tecnicosParaMostrar = tecnicosParaMostrar.filter(t => t.nome === usuarioLogado.tecnico_vinculado);
   }
@@ -609,6 +620,113 @@ function carregarTecnicos() {
     d.onclick = () => abrirTecnico(i.nome);
     lista.appendChild(d);
   });
+}
+
+// ==================== IMPORTAÇÃO EXCEL ====================
+let dadosParaImportar = [];
+
+document.getElementById('importarExcelConfig').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      
+      dadosParaImportar = [];
+      const preview = [];
+      
+      json.slice(0, 10).forEach(row => {
+        const id = String(row.ID || '').trim();
+        const equipe = row.EQUIPE || '';
+        const assunto = row.ASSUNTO || '';
+        const data = row['DATA/HORA FECHAMENTO'] || '';
+        const comissao = row['VALOR COMISSAO'] || 0;
+        
+        if (id) {
+          dadosParaImportar.push({ id, equipe, assunto, data, comissao });
+          preview.push({ id, equipe, assunto });
+        }
+      });
+      
+      const previewDiv = document.getElementById('previewContent');
+      previewDiv.innerHTML = `
+        <p><strong>Total de registros:</strong> ${dadosParaImportar.length}</p>
+        <table style="font-size:12px;">
+          <tr><th>ID</th><th>Equipe</th><th>Assunto</th></tr>
+          ${preview.map(r => `<tr><td>${r.id}</td><td>${r.equipe}</td><td>${r.assunto}</td></tr>`).join('')}
+        </table>
+        ${dadosParaImportar.length > 10 ? '<p>... e mais ' + (dadosParaImportar.length - 10) + ' registros</p>' : ''}
+      `;
+      
+      document.getElementById('importPreview').classList.remove('hidden');
+    } catch (err) {
+      alert('❌ Erro ao ler arquivo: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacao() {
+  if (dadosParaImportar.length === 0) {
+    alert('Nenhum dado para importar.');
+    return;
+  }
+  
+  if (!confirm(`Importar ${dadosParaImportar.length} registros?`)) return;
+  
+  showLoading('Importando...');
+  let importadas = 0;
+  let duplicadas = 0;
+  
+  for (const row of dadosParaImportar) {
+    if (osExiste(row.id)) {
+      duplicadas++;
+      continue;
+    }
+    
+    const equipeArray = row.equipe.split('/').map(t => t.trim().toUpperCase());
+    let data = row.data;
+    if (data.includes('/')) {
+      const parts = data.split(' ')[0].split('/');
+      if (parts.length === 3) data = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    }
+    
+    const os = {
+      id: row.id,
+      equipe: equipeArray,
+      assunto: row.assunto,
+      data: data || new Date().toISOString().split('T')[0],
+      cidade: '',
+      comissao: parseFloat(row.comissao) || 0
+    };
+    
+    const { error } = await supabaseClient.from('os').insert({
+      id: os.id,
+      equipe: os.equipe.join(' / '),
+      assunto: os.assunto,
+      data: os.data,
+      cidade: os.cidade,
+      comissao: os.comissao
+    });
+    
+    if (!error) {
+      dados.push(os);
+      importadas++;
+    }
+  }
+  
+  hideLoading();
+  document.getElementById('importPreview').classList.add('hidden');
+  dadosParaImportar = [];
+  
+  carregarTecnicos();
+  atualizarRanking();
+  if (tecnicoSelecionado) { atualizarTabela(); atualizarStats(); }
+  
+  alert(`✅ ${importadas} importadas!\n⚠️ ${duplicadas} duplicadas ignoradas.`);
 }
 
 // ==================== CRUD TÉCNICOS ====================
@@ -902,11 +1020,12 @@ function cancelarFormUsuario() { document.getElementById('formUsuario').classLis
 function mudarTab(tab) {
   document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
-  ['Tecnicos','Assuntos','Cidades','Usuarios'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
-  if (tab === 'tecnicos') document.getElementById('tabTecnicos').classList.remove('hidden');
-  else if (tab === 'assuntos') { document.getElementById('tabAssuntos').classList.remove('hidden'); carregarListaAssuntos(); }
-  else if (tab === 'cidades') { document.getElementById('tabCidades').classList.remove('hidden'); carregarListaCidades(); }
-  else if (tab === 'usuarios') { document.getElementById('tabUsuarios').classList.remove('hidden'); carregarListaUsuarios(); carregarSelectTecnicos(); }
+  ['Tecnicos','Assuntos','Cidades','Usuarios','Importar'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
+  document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
+  
+  if (tab === 'assuntos') carregarListaAssuntos();
+  if (tab === 'cidades') carregarListaCidades();
+  if (tab === 'usuarios') carregarListaUsuarios();
 }
 
 function abrirConfiguracoes() {
@@ -915,7 +1034,7 @@ function abrirConfiguracoes() {
   carregarListaConfig();
   document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelector('#configTabs .tab').classList.add('active');
-  ['Assuntos','Cidades','Usuarios'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
+  ['Assuntos','Cidades','Usuarios','Importar'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
   document.getElementById('tabTecnicos').classList.remove('hidden');
 }
 function fecharConfiguracoes() { document.getElementById('modalConfig').classList.add('hidden'); }
@@ -927,7 +1046,6 @@ function abrirTecnico(nome) {
   document.getElementById('home').classList.add('hidden');
   document.getElementById('painel').classList.remove('hidden');
   
-  // Técnicos só podem ver suas próprias OS
   const isAdmin = usuarioLogado?.tipo === 'admin';
   document.getElementById('btnNovaOS').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('btnExcluirSelecionados').style.display = isAdmin ? 'block' : 'none';
@@ -1081,49 +1199,6 @@ function atualizarStats() {
   
   document.getElementById('stats').innerHTML = html;
 }
-
-// Importação Excel
-document.getElementById('importar').addEventListener('change', async function(e) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores podem importar.'); return; }
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(evt) {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'array' });
-      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      let importadas = 0;
-      
-      for (const row of json) {
-        const id = String(row.ID || '').trim();
-        if (!id || osExiste(id)) continue;
-        
-        const equipeRaw = row.EQUIPE || '';
-        const equipe = equipeRaw.split('/').map(t => t.trim().toUpperCase());
-        if (!equipe.length) continue;
-        
-        let data = row['DATA/HORA FECHAMENTO'] || '';
-        if (data.includes('/')) {
-          const parts = data.split(' ')[0].split('/');
-          if (parts.length === 3) data = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-        }
-        
-        const os = { id, data: data || new Date().toISOString().split('T')[0], equipe, assunto: row.ASSUNTO || '', cidade: '', comissao: parseFloat(row['VALOR COMISSAO'] || 0) };
-        
-        await supabaseClient.from('os').insert({
-          id, equipe: os.equipe.join(' / '), assunto: os.assunto, data: os.data, cidade: os.cidade, comissao: os.comissao
-        });
-        
-        dados.push(os);
-        importadas++;
-      }
-      
-      if (tecnicoSelecionado) { atualizarTabela(); atualizarStats(); }
-      carregarTecnicos(); atualizarRanking();
-      alert(`✅ ${importadas} registros importados!`);
-    } catch (err) { alert('❌ Erro ao importar'); }
-  };
-  reader.readAsArrayBuffer(file); e.target.value = '';
-});
 
 function mostrarConfirmacao(titulo, mensagem, onConfirm) {
   document.getElementById('confirmacaoTitulo').textContent = titulo;
