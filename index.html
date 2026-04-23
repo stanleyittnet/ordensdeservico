@@ -115,9 +115,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .tecnico-item, .assunto-item, .cidade-item, .usuario-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: white; flex-wrap: wrap; gap: 10px; }
 .tecnico-actions, .assunto-actions, .cidade-actions, .usuario-actions { display: flex; gap: 5px; flex-wrap: wrap; }
 
-#importContainer { padding: 20px; text-align: center; background: #f8f9fa; border-radius: 8px; }
-#importContainer input { margin-bottom: 20px; }
+.import-container { padding: 20px; text-align: center; background: #f8f9fa; border-radius: 8px; }
+.import-container input { margin-bottom: 20px; }
 .import-preview { max-height: 300px; overflow-y: auto; margin-top: 20px; background: white; border-radius: 8px; padding: 10px; }
+.import-info { background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left; border-left: 4px solid #2196F3; }
+.import-info h4 { margin: 0 0 10px 0; color: #1976D2; }
+.import-info p { margin: 5px 0; color: #555; font-size: 13px; }
 
 #formOS { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 12px; }
 input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; width: 100%; min-height: 44px; background-color: white; }
@@ -192,7 +195,10 @@ input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; fo
       <button class="tab" onclick="mudarTab('assuntos')">📋 Assuntos</button>
       <button class="tab" onclick="mudarTab('cidades')">🏙️ Cidades</button>
       <button class="tab" onclick="mudarTab('usuarios')">🔐 Usuários</button>
-      <button class="tab" onclick="mudarTab('importar')">📂 Importar OS</button>
+      <button class="tab" onclick="mudarTab('importarOS')">📂 Importar OS</button>
+      <button class="tab" onclick="mudarTab('importarTecnicos')">📂 Importar Técnicos</button>
+      <button class="tab" onclick="mudarTab('importarAssuntos')">📂 Importar Assuntos</button>
+      <button class="tab" onclick="mudarTab('importarCidades')">📂 Importar Cidades</button>
     </div>
     
     <!-- Tab Técnicos -->
@@ -265,16 +271,73 @@ input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; fo
     </div>
     
     <!-- Tab Importar OS -->
-    <div id="tabImportar" class="tab-content hidden">
-      <div id="importContainer">
-        <h3 style="margin-bottom: 20px;">📂 Importar Ordens de Serviço</h3>
-        <p style="margin-bottom: 20px; color: #666;">Selecione um arquivo Excel (.xlsx ou .xls) com as colunas: ID, EQUIPE, ASSUNTO, DATA/HORA FECHAMENTO, VALOR COMISSAO</p>
-        <input type="file" id="importarExcelConfig" accept=".xlsx,.xls" style="display: block; margin: 0 auto 20px; max-width: 300px;">
-        <button class="btn-primary" onclick="document.getElementById('importarExcelConfig').click()">📁 Selecionar Arquivo</button>
-        <div id="importPreview" class="import-preview hidden">
+    <div id="tabImportarOS" class="tab-content hidden">
+      <div class="import-container">
+        <h3>📂 Importar Ordens de Serviço</h3>
+        <div class="import-info">
+          <h4>📋 Instruções</h4>
+          <p><strong>Colunas esperadas:</strong> ID, EQUIPE, ASSUNTO, DATA/HORA FECHAMENTO, VALOR COMISSAO</p>
+          <p><small>Exemplo: "146710" | "GEOVANE / LUIZ FELIPE" | "CONEXÃO - JF" | "01/04/2026 08:41:45" | "4"</small></p>
+        </div>
+        <input type="file" id="importarOSFile" accept=".xlsx,.xls">
+        <div id="importOSPreview" class="import-preview hidden">
           <h4>Pré-visualização:</h4>
-          <div id="previewContent"></div>
-          <button class="btn-success" onclick="confirmarImportacao()" style="margin-top: 20px;">✅ Confirmar Importação</button>
+          <div id="importOSContent"></div>
+          <button class="btn-success" onclick="confirmarImportacaoOS()" style="margin-top: 20px;">✅ Confirmar Importação</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab Importar Técnicos -->
+    <div id="tabImportarTecnicos" class="tab-content hidden">
+      <div class="import-container">
+        <h3>📂 Importar Técnicos</h3>
+        <div class="import-info">
+          <h4>📋 Instruções</h4>
+          <p><strong>Colunas esperadas:</strong> NOME, FUNCAO (Líder/Auxiliar), APELIDO (opcional)</p>
+          <p><small>Exemplo: "JULIO CESAR" | "Líder" | "JULIO"</small></p>
+        </div>
+        <input type="file" id="importarTecnicosFile" accept=".xlsx,.xls">
+        <div id="importTecnicosPreview" class="import-preview hidden">
+          <h4>Pré-visualização:</h4>
+          <div id="importTecnicosContent"></div>
+          <button class="btn-success" onclick="confirmarImportacaoTecnicos()" style="margin-top: 20px;">✅ Confirmar Importação</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab Importar Assuntos -->
+    <div id="tabImportarAssuntos" class="tab-content hidden">
+      <div class="import-container">
+        <h3>📂 Importar Assuntos</h3>
+        <div class="import-info">
+          <h4>📋 Instruções</h4>
+          <p><strong>Colunas esperadas:</strong> NOME, VALOR</p>
+          <p><small>Exemplo: "SUPORTE" | "4"</small></p>
+        </div>
+        <input type="file" id="importarAssuntosFile" accept=".xlsx,.xls">
+        <div id="importAssuntosPreview" class="import-preview hidden">
+          <h4>Pré-visualização:</h4>
+          <div id="importAssuntosContent"></div>
+          <button class="btn-success" onclick="confirmarImportacaoAssuntos()" style="margin-top: 20px;">✅ Confirmar Importação</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab Importar Cidades -->
+    <div id="tabImportarCidades" class="tab-content hidden">
+      <div class="import-container">
+        <h3>📂 Importar Cidades</h3>
+        <div class="import-info">
+          <h4>📋 Instruções</h4>
+          <p><strong>Colunas esperadas:</strong> NOME</p>
+          <p><small>Exemplo: "Teresina"</small></p>
+        </div>
+        <input type="file" id="importarCidadesFile" accept=".xlsx,.xls">
+        <div id="importCidadesPreview" class="import-preview hidden">
+          <h4>Pré-visualização:</h4>
+          <div id="importCidadesContent"></div>
+          <button class="btn-success" onclick="confirmarImportacaoCidades()" style="margin-top: 20px;">✅ Confirmar Importação</button>
         </div>
       </div>
     </div>
@@ -373,7 +436,6 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let usuarioLogado = null;
 let usuarios = [{ usuario: "admin", senha: "admin123", tipo: "admin", tecnico_vinculado: null }];
 let dados = [];
-let dadosImportados = [];
 let tecnicoSelecionado = "";
 let editandoIndex = -1;
 let filtroAssunto = null;
@@ -383,12 +445,17 @@ let tecnicos = [];
 let assuntosMap = {};
 let cidades = [];
 
+// Dados para importação
+let dadosImportacaoOS = [];
+let dadosImportacaoTecnicos = [];
+let dadosImportacaoAssuntos = [];
+let dadosImportacaoCidades = [];
+
 // ==================== FUNÇÕES SUPABASE ====================
 async function carregarDadosSupabase() {
   try {
     showLoading('Carregando dados...');
     
-    // Carregar OS
     const { data: osData } = await supabaseClient.from('os').select('*').order('data', { ascending: false });
     if (osData) {
       dados = osData.map(row => ({
@@ -401,7 +468,6 @@ async function carregarDadosSupabase() {
       }));
     }
     
-    // Carregar Técnicos
     const { data: tecData } = await supabaseClient.from('tecnicos').select('*');
     if (tecData) {
       tecnicos = tecData.map(row => ({
@@ -413,20 +479,15 @@ async function carregarDadosSupabase() {
     }
     if (tecnicos.length === 0) inicializarTecnicosPadrao();
     
-    // Carregar Assuntos
     const { data: assData } = await supabaseClient.from('assuntos').select('*');
     if (assData) {
       assuntosMap = {};
       assData.forEach(row => { assuntosMap[String(row.nome || '').toUpperCase()] = parseFloat(row.valor) || 0; });
     }
     
-    // Carregar Cidades
     const { data: cidData } = await supabaseClient.from('cidades').select('*');
-    if (cidData) {
-      cidades = cidData.map(row => String(row.nome || ''));
-    }
+    if (cidData) cidades = cidData.map(row => String(row.nome || ''));
     
-    // Carregar Usuários
     const { data: usrData } = await supabaseClient.from('usuarios').select('*');
     if (usrData) {
       usuarios = usrData.map(row => ({
@@ -504,10 +565,7 @@ async function fazerLogin() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('userDisplay').textContent = `${user.usuario} (${user.tipo === 'admin' ? 'ADMIN' : 'Técnico'})`;
-    
-    const isAdmin = user.tipo === 'admin';
-    document.getElementById('configBtn').style.display = isAdmin ? 'flex' : 'none';
-    
+    document.getElementById('configBtn').style.display = user.tipo === 'admin' ? 'flex' : 'none';
     inicializar();
   } else {
     document.getElementById('loginError').style.display = 'block';
@@ -522,7 +580,7 @@ function fazerLogout() {
 }
 
 function verificarPermissaoConfig() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado. Apenas administradores.'); return false; }
+  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado.'); return false; }
   return true;
 }
 
@@ -622,10 +680,8 @@ function carregarTecnicos() {
   });
 }
 
-// ==================== IMPORTAÇÃO EXCEL ====================
-let dadosParaImportar = [];
-
-document.getElementById('importarExcelConfig').addEventListener('change', function(e) {
+// ==================== IMPORTAÇÃO OS ====================
+document.getElementById('importarOSFile').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   
@@ -635,152 +691,231 @@ document.getElementById('importarExcelConfig').addEventListener('change', functi
       const wb = XLSX.read(evt.target.result, { type: 'array' });
       const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
       
-      dadosParaImportar = [];
-      const preview = [];
+      dadosImportacaoOS = [];
+      let preview = '';
       
       json.slice(0, 10).forEach(row => {
         const id = String(row.ID || '').trim();
-        const equipe = row.EQUIPE || '';
-        const assunto = row.ASSUNTO || '';
-        const data = row['DATA/HORA FECHAMENTO'] || '';
-        const comissao = row['VALOR COMISSAO'] || 0;
-        
         if (id) {
-          dadosParaImportar.push({ id, equipe, assunto, data, comissao });
-          preview.push({ id, equipe, assunto });
+          dadosImportacaoOS.push({
+            id, equipe: row.EQUIPE || '', assunto: row.ASSUNTO || '',
+            data: row['DATA/HORA FECHAMENTO'] || '', comissao: row['VALOR COMISSAO'] || 0
+          });
+          preview += `<tr><td>${id}</td><td>${row.EQUIPE || ''}</td><td>${row.ASSUNTO || ''}</td></tr>`;
         }
       });
       
-      const previewDiv = document.getElementById('previewContent');
-      previewDiv.innerHTML = `
-        <p><strong>Total de registros:</strong> ${dadosParaImportar.length}</p>
-        <table style="font-size:12px;">
-          <tr><th>ID</th><th>Equipe</th><th>Assunto</th></tr>
-          ${preview.map(r => `<tr><td>${r.id}</td><td>${r.equipe}</td><td>${r.assunto}</td></tr>`).join('')}
-        </table>
-        ${dadosParaImportar.length > 10 ? '<p>... e mais ' + (dadosParaImportar.length - 10) + ' registros</p>' : ''}
+      document.getElementById('importOSContent').innerHTML = `
+        <p><strong>Total:</strong> ${dadosImportacaoOS.length} registros</p>
+        <table><tr><th>ID</th><th>Equipe</th><th>Assunto</th></tr>${preview}</table>
+        ${dadosImportacaoOS.length > 10 ? '<p>... e mais</p>' : ''}
       `;
-      
-      document.getElementById('importPreview').classList.remove('hidden');
-    } catch (err) {
-      alert('❌ Erro ao ler arquivo: ' + err.message);
-    }
+      document.getElementById('importOSPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
   };
   reader.readAsArrayBuffer(file);
 });
 
-async function confirmarImportacao() {
-  if (dadosParaImportar.length === 0) {
-    alert('Nenhum dado para importar.');
-    return;
-  }
-  
-  if (!confirm(`Importar ${dadosParaImportar.length} registros?`)) return;
+async function confirmarImportacaoOS() {
+  if (!dadosImportacaoOS.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoOS.length} OS?`)) return;
   
   showLoading('Importando...');
-  let importadas = 0;
-  let duplicadas = 0;
+  let imp = 0, dup = 0;
   
-  for (const row of dadosParaImportar) {
-    if (osExiste(row.id)) {
-      duplicadas++;
-      continue;
-    }
-    
-    const equipeArray = row.equipe.split('/').map(t => t.trim().toUpperCase());
-    let data = row.data;
-    if (data.includes('/')) {
-      const parts = data.split(' ')[0].split('/');
-      if (parts.length === 3) data = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-    }
-    
-    const os = {
-      id: row.id,
-      equipe: equipeArray,
-      assunto: row.assunto,
-      data: data || new Date().toISOString().split('T')[0],
-      cidade: '',
-      comissao: parseFloat(row.comissao) || 0
-    };
+  for (const r of dadosImportacaoOS) {
+    if (osExiste(r.id)) { dup++; continue; }
+    let data = r.data;
+    if (data.includes('/')) { const p = data.split(' ')[0].split('/'); if (p.length === 3) data = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; }
+    const eq = r.equipe.split('/').map(t => t.trim().toUpperCase());
     
     const { error } = await supabaseClient.from('os').insert({
-      id: os.id,
-      equipe: os.equipe.join(' / '),
-      assunto: os.assunto,
-      data: os.data,
-      cidade: os.cidade,
-      comissao: os.comissao
+      id: r.id, equipe: eq.join(' / '), assunto: r.assunto,
+      data: data || new Date().toISOString().split('T')[0], cidade: '', comissao: parseFloat(r.comissao) || 0
     });
-    
-    if (!error) {
-      dados.push(os);
-      importadas++;
-    }
+    if (!error) { dados.push({ id: r.id, equipe: eq, assunto: r.assunto, data: data, cidade: '', comissao: parseFloat(r.comissao) || 0 }); imp++; }
   }
   
   hideLoading();
-  document.getElementById('importPreview').classList.add('hidden');
-  dadosParaImportar = [];
-  
-  carregarTecnicos();
-  atualizarRanking();
-  if (tecnicoSelecionado) { atualizarTabela(); atualizarStats(); }
-  
-  alert(`✅ ${importadas} importadas!\n⚠️ ${duplicadas} duplicadas ignoradas.`);
+  document.getElementById('importOSPreview').classList.add('hidden');
+  carregarTecnicos(); atualizarRanking();
+  alert(`✅ ${imp} importadas!\n⚠️ ${dup} duplicadas.`);
 }
 
-// ==================== CRUD TÉCNICOS ====================
+// ==================== IMPORTAÇÃO TÉCNICOS ====================
+document.getElementById('importarTecnicosFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      
+      dadosImportacaoTecnicos = [];
+      let preview = '';
+      
+      json.slice(0, 10).forEach(row => {
+        const nome = String(row.NOME || '').trim().toUpperCase();
+        if (nome) {
+          dadosImportacaoTecnicos.push({
+            nome, funcao: row.FUNCAO || 'Auxiliar', apelido: row.APELIDO || nome.split(' ')[0]
+          });
+          preview += `<tr><td>${nome}</td><td>${row.FUNCAO || 'Auxiliar'}</td></tr>`;
+        }
+      });
+      
+      document.getElementById('importTecnicosContent').innerHTML = `
+        <p><strong>Total:</strong> ${dadosImportacaoTecnicos.length} técnicos</p>
+        <table><tr><th>Nome</th><th>Função</th></tr>${preview}</table>
+      `;
+      document.getElementById('importTecnicosPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoTecnicos() {
+  if (!dadosImportacaoTecnicos.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoTecnicos.length} técnicos?`)) return;
+  
+  showLoading('Importando...');
+  let imp = 0;
+  
+  for (const t of dadosImportacaoTecnicos) {
+    const existe = tecnicos.some(tc => tc.nome === t.nome);
+    if (existe) continue;
+    
+    const { error } = await supabaseClient.from('tecnicos').insert({ nome: t.nome, ativo: true, funcao: t.funcao, apelido: t.apelido });
+    if (!error) { tecnicos.push({ nome: t.nome, ativo: true, funcao: t.funcao, apelido: t.apelido }); imp++; }
+  }
+  
+  hideLoading();
+  document.getElementById('importTecnicosPreview').classList.add('hidden');
+  carregarListaConfig(); carregarTecnicos();
+  alert(`✅ ${imp} técnicos importados!`);
+}
+
+// ==================== IMPORTAÇÃO ASSUNTOS ====================
+document.getElementById('importarAssuntosFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      
+      dadosImportacaoAssuntos = [];
+      let preview = '';
+      
+      json.slice(0, 10).forEach(row => {
+        const nome = String(row.NOME || '').trim().toUpperCase();
+        const valor = parseFloat(row.VALOR) || 0;
+        if (nome && valor > 0) {
+          dadosImportacaoAssuntos.push({ nome, valor });
+          preview += `<tr><td>${nome}</td><td>R$ ${valor.toFixed(2)}</td></tr>`;
+        }
+      });
+      
+      document.getElementById('importAssuntosContent').innerHTML = `
+        <p><strong>Total:</strong> ${dadosImportacaoAssuntos.length} assuntos</p>
+        <table><tr><th>Nome</th><th>Valor</th></tr>${preview}</table>
+      `;
+      document.getElementById('importAssuntosPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoAssuntos() {
+  if (!dadosImportacaoAssuntos.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoAssuntos.length} assuntos?`)) return;
+  
+  showLoading('Importando...');
+  let imp = 0;
+  
+  for (const a of dadosImportacaoAssuntos) {
+    const { error } = await supabaseClient.from('assuntos').upsert({ nome: a.nome, valor: a.valor }, { onConflict: 'nome' });
+    if (!error) { assuntosMap[a.nome] = a.valor; imp++; }
+  }
+  
+  hideLoading();
+  document.getElementById('importAssuntosPreview').classList.add('hidden');
+  carregarListaAssuntos(); carregarAssuntos();
+  alert(`✅ ${imp} assuntos importados!`);
+}
+
+// ==================== IMPORTAÇÃO CIDADES ====================
+document.getElementById('importarCidadesFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'array' });
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      
+      dadosImportacaoCidades = [];
+      let preview = '';
+      
+      json.slice(0, 10).forEach(row => {
+        const nome = String(row.NOME || '').trim();
+        if (nome) {
+          const cidade = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+          dadosImportacaoCidades.push(cidade);
+          preview += `<tr><td>${cidade}</td></tr>`;
+        }
+      });
+      
+      document.getElementById('importCidadesContent').innerHTML = `
+        <p><strong>Total:</strong> ${dadosImportacaoCidades.length} cidades</p>
+        <table><tr><th>Nome</th></tr>${preview}</table>
+      `;
+      document.getElementById('importCidadesPreview').classList.remove('hidden');
+    } catch (err) { alert('❌ Erro: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function confirmarImportacaoCidades() {
+  if (!dadosImportacaoCidades.length) { alert('Nenhum dado'); return; }
+  if (!confirm(`Importar ${dadosImportacaoCidades.length} cidades?`)) return;
+  
+  showLoading('Importando...');
+  let imp = 0;
+  
+  for (const c of dadosImportacaoCidades) {
+    const { error } = await supabaseClient.from('cidades').upsert({ nome: c }, { onConflict: 'nome' });
+    if (!error) { if (!cidades.includes(c)) cidades.push(c); imp++; }
+  }
+  
+  hideLoading();
+  document.getElementById('importCidadesPreview').classList.add('hidden');
+  carregarListaCidades(); carregarCidades();
+  alert(`✅ ${imp} cidades importadas!`);
+}
+
+// ==================== CRUDs (mantidos iguais) ====================
 async function salvarTecnico() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  
   const nome = document.getElementById('nomeTecnicoInput').value.trim().toUpperCase();
   const funcao = document.querySelector('input[name="funcao"]:checked')?.value || 'Auxiliar';
   const editNome = document.getElementById('editTecnicoNome').value;
-  
   if (!nome) { alert('Digite o nome'); return; }
-  
   const tecnico = { nome, ativo: true, funcao, apelido: nome.split(' ')[0] };
-  
   if (editNome) {
     await supabaseClient.from('tecnicos').update(tecnico).eq('nome', editNome);
   } else {
     await supabaseClient.from('tecnicos').insert(tecnico);
   }
-  
   await carregarDadosSupabase();
-  carregarListaConfig();
-  carregarTecnicos();
-  cancelarFormTecnico();
+  carregarListaConfig(); carregarTecnicos(); cancelarFormTecnico();
 }
 
-function editarTecnico(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  const t = tecnicos.find(tn => tn.nome === nome);
-  document.getElementById('nomeTecnicoInput').value = t.nome;
-  document.querySelector(`input[name="funcao"][value="${t.funcao || 'Auxiliar'}"]`).checked = true;
-  document.getElementById('editTecnicoNome').value = nome;
-  document.getElementById('formTecnico').classList.remove('hidden');
-}
-
-async function toggleStatusTecnico(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  const t = tecnicos.find(tn => tn.nome === nome);
-  await supabaseClient.from('tecnicos').update({ ativo: !t.ativo }).eq('nome', nome);
-  await carregarDadosSupabase();
-  carregarListaConfig();
-  carregarTecnicos();
-}
-
-async function excluirTecnico(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  if (!confirm(`Excluir ${nome}?`)) return;
-  await supabaseClient.from('tecnicos').delete().eq('nome', nome);
-  await carregarDadosSupabase();
-  carregarListaConfig();
-  carregarTecnicos();
-}
-
-// ==================== CRUD ASSUNTOS ====================
 async function salvarAssunto() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
   const nome = document.getElementById('nomeAssuntoInput').value.trim().toUpperCase();
@@ -793,63 +928,24 @@ async function salvarAssunto() {
     await supabaseClient.from('assuntos').insert({ nome, valor });
   }
   await carregarDadosSupabase();
-  carregarListaAssuntos();
-  carregarAssuntos();
-  cancelarFormAssunto();
+  carregarListaAssuntos(); carregarAssuntos(); cancelarFormAssunto();
 }
 
-function editarAssunto(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  document.getElementById('nomeAssuntoInput').value = nome;
-  document.getElementById('valorAssuntoInput').value = assuntosMap[nome];
-  document.getElementById('editAssuntoNome').value = nome;
-  document.getElementById('formAssunto').classList.remove('hidden');
-}
-
-async function excluirAssunto(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  if (!confirm(`Excluir "${nome}"?`)) return;
-  await supabaseClient.from('assuntos').delete().eq('nome', nome);
-  await carregarDadosSupabase();
-  carregarListaAssuntos();
-  carregarAssuntos();
-}
-
-// ==================== CRUD CIDADES ====================
 async function salvarCidade() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
   const nome = document.getElementById('nomeCidadeInput').value.trim();
   const editNome = document.getElementById('editCidadeNome').value;
   if (!nome) { alert('Digite o nome'); return; }
-  const cidadeFormatada = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+  const cidade = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
   if (editNome) {
-    await supabaseClient.from('cidades').update({ nome: cidadeFormatada }).eq('nome', editNome);
+    await supabaseClient.from('cidades').update({ nome: cidade }).eq('nome', editNome);
   } else {
-    await supabaseClient.from('cidades').insert({ nome: cidadeFormatada });
+    await supabaseClient.from('cidades').insert({ nome: cidade });
   }
   await carregarDadosSupabase();
-  carregarListaCidades();
-  carregarCidades();
-  cancelarFormCidade();
+  carregarListaCidades(); carregarCidades(); cancelarFormCidade();
 }
 
-function editarCidade(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  document.getElementById('nomeCidadeInput').value = nome;
-  document.getElementById('editCidadeNome').value = nome;
-  document.getElementById('formCidade').classList.remove('hidden');
-}
-
-async function excluirCidade(nome) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  if (!confirm(`Excluir ${nome}?`)) return;
-  await supabaseClient.from('cidades').delete().eq('nome', nome);
-  await carregarDadosSupabase();
-  carregarListaCidades();
-  carregarCidades();
-}
-
-// ==================== CRUD USUÁRIOS ====================
 async function salvarUsuario() {
   if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
   const usuario = document.getElementById('usuarioInput').value.trim();
@@ -867,30 +963,7 @@ async function salvarUsuario() {
     await supabaseClient.from('usuarios').insert(userData);
   }
   await carregarDadosSupabase();
-  carregarListaUsuarios();
-  cancelarFormUsuario();
-}
-
-function editarUsuario(usuario) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  const u = usuarios.find(us => us.usuario === usuario);
-  document.getElementById('usuarioInput').value = u.usuario;
-  document.getElementById('senhaInput').value = '';
-  document.getElementById('senhaInput').placeholder = '****** (mantenha para não alterar)';
-  document.querySelector(`input[name="tipoUsuario"][value="${u.tipo}"]`).checked = true;
-  document.getElementById('editUsuarioNome').value = usuario;
-  carregarSelectTecnicos();
-  document.getElementById('tecnicoVinculadoSelect').value = u.tecnico_vinculado || '';
-  document.getElementById('formUsuario').classList.remove('hidden');
-}
-
-async function excluirUsuario(usuario) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  if (usuario === 'admin') { alert('Admin não pode ser excluído!'); return; }
-  if (!confirm(`Excluir ${usuario}?`)) return;
-  await supabaseClient.from('usuarios').delete().eq('usuario', usuario);
-  await carregarDadosSupabase();
-  carregarListaUsuarios();
+  carregarListaUsuarios(); cancelarFormUsuario();
 }
 
 // ==================== FUNÇÕES AUXILIARES ====================
@@ -898,9 +971,8 @@ function carregarListaConfig() {
   const lista = document.getElementById('listaTecnicosConfig');
   lista.innerHTML = '';
   tecnicos.sort((a, b) => a.nome.localeCompare(b.nome)).forEach(t => {
-    const d = document.createElement('div');
-    d.className = 'tecnico-item';
-    d.innerHTML = `<div style="flex:1;"><strong>${t.nome}</strong><div style="margin-top:5px;"><span class="funcao-badge ${t.funcao==='Líder'?'funcao-lider':'funcao-auxiliar'}" style="position:static;">${t.funcao||'Auxiliar'}</span><span class="status-badge" style="position:static;margin-left:5px;background:${t.ativo?'#28a745':'#dc3545'};color:white;padding:2px 8px;border-radius:12px;font-size:11px;">${t.ativo?'Ativo':'Inativo'}</span></div></div><div class="tecnico-actions"><button class="btn-warning" onclick="editarTecnico('${t.nome}')" style="padding:6px 10px;">✏️</button><button class="${t.ativo?'btn-secondary':'btn-success'}" onclick="toggleStatusTecnico('${t.nome}')" style="padding:6px 10px;">${t.ativo?'🔴':'🟢'}</button><button class="btn-danger" onclick="excluirTecnico('${t.nome}')" style="padding:6px 10px;">🗑️</button></div>`;
+    const d = document.createElement('div'); d.className = 'tecnico-item';
+    d.innerHTML = `<div style="flex:1;"><strong>${t.nome}</strong><div style="margin-top:5px;"><span class="funcao-badge ${t.funcao==='Líder'?'funcao-lider':'funcao-auxiliar'}" style="position:static;">${t.funcao||'Auxiliar'}</span><span class="status-badge" style="position:static;margin-left:5px;background:${t.ativo?'#28a745':'#dc3545'};color:white;padding:2px 8px;border-radius:12px;">${t.ativo?'Ativo':'Inativo'}</span></div></div><div class="tecnico-actions"><button class="btn-warning" onclick="editarTecnico('${t.nome}')">✏️</button><button class="${t.ativo?'btn-secondary':'btn-success'}" onclick="toggleStatusTecnico('${t.nome}')">${t.ativo?'🔴':'🟢'}</button><button class="btn-danger" onclick="excluirTecnico('${t.nome}')">🗑️</button></div>`;
     lista.appendChild(d);
   });
 }
@@ -908,9 +980,9 @@ function carregarListaConfig() {
 function carregarListaAssuntos() {
   const lista = document.getElementById('listaAssuntosConfig');
   lista.innerHTML = '';
-  Object.entries(assuntosMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([n, v]) => {
+  Object.entries(assuntosMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([n,v]) => {
     const d = document.createElement('div'); d.className = 'assunto-item';
-    d.innerHTML = `<div><strong>${n}</strong><br><small>R$ ${v.toFixed(2)}</small></div><div class="assunto-actions"><button class="btn-warning" onclick="editarAssunto('${n}')" style="padding:6px 10px;">✏️</button><button class="btn-danger" onclick="excluirAssunto('${n}')" style="padding:6px 10px;">🗑️</button></div>`;
+    d.innerHTML = `<div><strong>${n}</strong><br><small>R$ ${v.toFixed(2)}</small></div><div class="assunto-actions"><button class="btn-warning" onclick="editarAssunto('${n}')">✏️</button><button class="btn-danger" onclick="excluirAssunto('${n}')">🗑️</button></div>`;
     lista.appendChild(d);
   });
 }
@@ -920,7 +992,7 @@ function carregarListaCidades() {
   lista.innerHTML = '';
   cidades.sort().forEach(c => {
     const d = document.createElement('div'); d.className = 'cidade-item';
-    d.innerHTML = `<div><strong>${c}</strong></div><div class="cidade-actions"><button class="btn-warning" onclick="editarCidade('${c}')" style="padding:6px 10px;">✏️</button><button class="btn-danger" onclick="excluirCidade('${c}')" style="padding:6px 10px;">🗑️</button></div>`;
+    d.innerHTML = `<div><strong>${c}</strong></div><div class="cidade-actions"><button class="btn-warning" onclick="editarCidade('${c}')">✏️</button><button class="btn-danger" onclick="excluirCidade('${c}')">🗑️</button></div>`;
     lista.appendChild(d);
   });
 }
@@ -930,7 +1002,7 @@ function carregarListaUsuarios() {
   lista.innerHTML = '';
   usuarios.forEach(u => {
     const d = document.createElement('div'); d.className = 'usuario-item';
-    d.innerHTML = `<div><strong>${u.usuario}</strong><br><small>${u.tipo==='admin'?'ADMIN':'Técnico'}</small></div><div class="usuario-actions"><button class="btn-warning" onclick="editarUsuario('${u.usuario}')" style="padding:6px 10px;">✏️</button><button class="btn-danger" onclick="excluirUsuario('${u.usuario}')" style="padding:6px 10px;">🗑️</button></div>`;
+    d.innerHTML = `<div><strong>${u.usuario}</strong><br><small>${u.tipo==='admin'?'ADMIN':'Técnico'}</small></div><div class="usuario-actions"><button class="btn-warning" onclick="editarUsuario('${u.usuario}')">✏️</button><button class="btn-danger" onclick="excluirUsuario('${u.usuario}')">🗑️</button></div>`;
     lista.appendChild(d);
   });
 }
@@ -939,10 +1011,7 @@ function carregarSelectTecnicos() {
   const select = document.getElementById('tecnicoVinculadoSelect');
   select.innerHTML = '<option value="">Vincular a um técnico (opcional)</option>';
   tecnicos.filter(t => t.ativo).forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.nome;
-    opt.textContent = t.nome;
-    select.appendChild(opt);
+    const opt = document.createElement('option'); opt.value = t.nome; opt.textContent = t.nome; select.appendChild(opt);
   });
 }
 
@@ -955,7 +1024,7 @@ function carregarCidades() {
 function carregarAssuntos() {
   const sel = document.getElementById('assunto');
   sel.innerHTML = '<option value="">Selecione o Assunto</option>';
-  Object.entries(assuntosMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([n, v]) => {
+  Object.entries(assuntosMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([n,v]) => {
     const o = document.createElement('option'); o.value = n; o.textContent = `${n} (R$ ${v.toFixed(2)})`; sel.appendChild(o);
   });
   sel.onchange = function() { if (this.value && assuntosMap[this.value]) document.getElementById('comissao').value = assuntosMap[this.value]; };
@@ -964,68 +1033,50 @@ function carregarAssuntos() {
 function mostrarDetalhamento(nome) {
   const t = tecnicos.find(tn => tn.nome === nome);
   const osT = dados.filter(d => d.equipe?.some(e => e.includes(t?.apelido) || t?.nome.includes(e)));
-  let html = `<div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:15px;"><h3>${nome}</h3><p>Função: ${t?.funcao||'Auxiliar'} ${t?.funcao==='Líder'?'(Bônus: +R$ 100,00)':''}</p></div>`;
+  let html = `<div style="background:#f8f9fa;padding:12px;border-radius:8px;"><h3>${nome}</h3><p>Função: ${t?.funcao||'Auxiliar'} ${t?.funcao==='Líder'?'(Bônus: +R$ 100,00)':''}</p></div>`;
   let total = 0;
-  osT.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(os => {
-    const ind = os.comissao / os.equipe.length;
-    total += ind;
+  osT.sort((a,b)=>new Date(b.data)-new Date(a.data)).forEach(os => {
+    const ind = os.comissao / os.equipe.length; total += ind;
     html += `<div style="padding:15px;border-bottom:1px solid #eee;"><strong>OS: ${os.id}</strong> - ${new Date(os.data+'T00:00:00').toLocaleDateString('pt-BR')}<br><small>Equipe: ${os.equipe.join(' / ')} | ${os.assunto} | ${os.cidade||'-'}</small><br><div>💰 Total: R$ ${os.comissao.toFixed(2)} | 👤 Sua parte: R$ ${ind.toFixed(2)}</div></div>`;
   });
   if (t?.funcao === 'Líder') { total += 100; html += `<div style="padding:15px;background:#fff9e6;"><strong>🎁 Bônus de Líder</strong><br>+ R$ 100,00</div>`; }
-  html += `<div style="font-size:18px;font-weight:bold;color:#28a745;margin-top:15px;padding-top:15px;border-top:2px solid #e0e0e0;">💰 Total Geral: R$ ${total.toFixed(2)}</div>`;
+  html += `<div style="font-size:18px;font-weight:bold;color:#28a745;margin-top:15px;">💰 Total Geral: R$ ${total.toFixed(2)}</div>`;
   document.getElementById('detalhamentoContent').innerHTML = html;
   document.getElementById('modalDetalhamento').classList.remove('hidden');
 }
 
 function fecharDetalhamento() { document.getElementById('modalDetalhamento').classList.add('hidden'); }
 
-function mostrarFormTecnico() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  document.getElementById('formTecnico').classList.remove('hidden');
-  document.getElementById('nomeTecnicoInput').value = '';
-  document.querySelector('input[name="funcao"][value="Líder"]').checked = true;
-  document.getElementById('editTecnicoNome').value = '';
-}
+function mostrarFormTecnico() { document.getElementById('formTecnico').classList.remove('hidden'); document.getElementById('nomeTecnicoInput').value = ''; document.querySelector('input[name="funcao"][value="Líder"]').checked = true; document.getElementById('editTecnicoNome').value = ''; }
 function cancelarFormTecnico() { document.getElementById('formTecnico').classList.add('hidden'); }
+function editarTecnico(nome) { const t = tecnicos.find(tn => tn.nome === nome); document.getElementById('nomeTecnicoInput').value = t.nome; document.querySelector(`input[name="funcao"][value="${t.funcao||'Auxiliar'}"]`).checked = true; document.getElementById('editTecnicoNome').value = nome; document.getElementById('formTecnico').classList.remove('hidden'); }
+async function toggleStatusTecnico(nome) { const t = tecnicos.find(tn => tn.nome === nome); await supabaseClient.from('tecnicos').update({ ativo: !t.ativo }).eq('nome', nome); await carregarDadosSupabase(); carregarListaConfig(); carregarTecnicos(); }
+async function excluirTecnico(nome) { if (!confirm(`Excluir ${nome}?`)) return; await supabaseClient.from('tecnicos').delete().eq('nome', nome); await carregarDadosSupabase(); carregarListaConfig(); carregarTecnicos(); }
 
-function mostrarFormAssunto() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  document.getElementById('formAssunto').classList.remove('hidden');
-  document.getElementById('nomeAssuntoInput').value = '';
-  document.getElementById('valorAssuntoInput').value = '';
-  document.getElementById('editAssuntoNome').value = '';
-}
+function mostrarFormAssunto() { document.getElementById('formAssunto').classList.remove('hidden'); document.getElementById('nomeAssuntoInput').value = ''; document.getElementById('valorAssuntoInput').value = ''; document.getElementById('editAssuntoNome').value = ''; }
 function cancelarFormAssunto() { document.getElementById('formAssunto').classList.add('hidden'); }
+function editarAssunto(nome) { document.getElementById('nomeAssuntoInput').value = nome; document.getElementById('valorAssuntoInput').value = assuntosMap[nome]; document.getElementById('editAssuntoNome').value = nome; document.getElementById('formAssunto').classList.remove('hidden'); }
+async function excluirAssunto(nome) { if (!confirm(`Excluir "${nome}"?`)) return; await supabaseClient.from('assuntos').delete().eq('nome', nome); await carregarDadosSupabase(); carregarListaAssuntos(); carregarAssuntos(); }
 
-function mostrarFormCidade() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  document.getElementById('formCidade').classList.remove('hidden');
-  document.getElementById('nomeCidadeInput').value = '';
-  document.getElementById('editCidadeNome').value = '';
-}
+function mostrarFormCidade() { document.getElementById('formCidade').classList.remove('hidden'); document.getElementById('nomeCidadeInput').value = ''; document.getElementById('editCidadeNome').value = ''; }
 function cancelarFormCidade() { document.getElementById('formCidade').classList.add('hidden'); }
+function editarCidade(nome) { document.getElementById('nomeCidadeInput').value = nome; document.getElementById('editCidadeNome').value = nome; document.getElementById('formCidade').classList.remove('hidden'); }
+async function excluirCidade(nome) { if (!confirm(`Excluir ${nome}?`)) return; await supabaseClient.from('cidades').delete().eq('nome', nome); await carregarDadosSupabase(); carregarListaCidades(); carregarCidades(); }
 
-function mostrarFormUsuario() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Acesso negado'); return; }
-  document.getElementById('formUsuario').classList.remove('hidden');
-  document.getElementById('usuarioInput').value = '';
-  document.getElementById('senhaInput').value = '';
-  document.getElementById('senhaInput').placeholder = 'Senha';
-  document.querySelector('input[name="tipoUsuario"][value="tecnico"]').checked = true;
-  document.getElementById('editUsuarioNome').value = '';
-  carregarSelectTecnicos();
-}
+function mostrarFormUsuario() { document.getElementById('formUsuario').classList.remove('hidden'); document.getElementById('usuarioInput').value = ''; document.getElementById('senhaInput').value = ''; document.querySelector('input[name="tipoUsuario"][value="tecnico"]').checked = true; document.getElementById('editUsuarioNome').value = ''; carregarSelectTecnicos(); }
 function cancelarFormUsuario() { document.getElementById('formUsuario').classList.add('hidden'); }
+function editarUsuario(usuario) { const u = usuarios.find(us => us.usuario === usuario); document.getElementById('usuarioInput').value = u.usuario; document.getElementById('senhaInput').value = ''; document.querySelector(`input[name="tipoUsuario"][value="${u.tipo}"]`).checked = true; document.getElementById('editUsuarioNome').value = usuario; carregarSelectTecnicos(); document.getElementById('tecnicoVinculadoSelect').value = u.tecnico_vinculado || ''; document.getElementById('formUsuario').classList.remove('hidden'); }
+async function excluirUsuario(usuario) { if (usuario === 'admin') { alert('Admin não pode ser excluído!'); return; } if (!confirm(`Excluir ${usuario}?`)) return; await supabaseClient.from('usuarios').delete().eq('usuario', usuario); await carregarDadosSupabase(); carregarListaUsuarios(); }
 
 function mudarTab(tab) {
   document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
-  ['Tecnicos','Assuntos','Cidades','Usuarios','Importar'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
-  document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
-  
-  if (tab === 'assuntos') carregarListaAssuntos();
-  if (tab === 'cidades') carregarListaCidades();
-  if (tab === 'usuarios') carregarListaUsuarios();
+  const tabs = ['Tecnicos','Assuntos','Cidades','Usuarios','ImportarOS','ImportarTecnicos','ImportarAssuntos','ImportarCidades'];
+  tabs.forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
+  document.getElementById(`tab${tab}`).classList.remove('hidden');
+  if (tab === 'Assuntos') carregarListaAssuntos();
+  if (tab === 'Cidades') carregarListaCidades();
+  if (tab === 'Usuarios') carregarListaUsuarios();
 }
 
 function abrirConfiguracoes() {
@@ -1034,7 +1085,8 @@ function abrirConfiguracoes() {
   carregarListaConfig();
   document.querySelectorAll('#configTabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelector('#configTabs .tab').classList.add('active');
-  ['Assuntos','Cidades','Usuarios','Importar'].forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
+  const tabs = ['Assuntos','Cidades','Usuarios','ImportarOS','ImportarTecnicos','ImportarAssuntos','ImportarCidades'];
+  tabs.forEach(t => document.getElementById(`tab${t}`).classList.add('hidden'));
   document.getElementById('tabTecnicos').classList.remove('hidden');
 }
 function fecharConfiguracoes() { document.getElementById('modalConfig').classList.add('hidden'); }
@@ -1045,158 +1097,56 @@ function abrirTecnico(nome) {
   document.getElementById('nomeTecnico').innerText = nome;
   document.getElementById('home').classList.add('hidden');
   document.getElementById('painel').classList.remove('hidden');
-  
   const isAdmin = usuarioLogado?.tipo === 'admin';
   document.getElementById('btnNovaOS').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('btnExcluirSelecionados').style.display = isAdmin ? 'block' : 'none';
-  
-  atualizarTabela();
-  atualizarStats();
-  atualizarEstadoBotoes();
+  atualizarTabela(); atualizarStats(); atualizarEstadoBotoes();
 }
 
 function voltar() { document.getElementById('home').classList.remove('hidden'); document.getElementById('painel').classList.add('hidden'); carregarTecnicos(); }
 function filtrarPorAssunto(assunto) { filtroAssunto = filtroAssunto === assunto ? null : assunto; atualizarTabela(); atualizarStats(); atualizarBarraFiltro(); }
 function limparFiltro() { filtroAssunto = null; atualizarTabela(); atualizarStats(); atualizarBarraFiltro(); }
+function atualizarBarraFiltro() { const bar = document.getElementById('filterBar'); if (filtroAssunto) { const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]))); document.getElementById('filterText').innerHTML = `<strong>Filtro:</strong> ${filtroAssunto} (${base.filter(d => d.assunto === filtroAssunto).length} OS)`; bar.classList.remove('hidden'); } else bar.classList.add('hidden'); }
 
-function atualizarBarraFiltro() {
-  const bar = document.getElementById('filterBar');
-  if (filtroAssunto) {
-    const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
-    document.getElementById('filterText').innerHTML = `<strong>Filtro:</strong> ${filtroAssunto} (${base.filter(d => d.assunto === filtroAssunto).length} OS)`;
-    bar.classList.remove('hidden');
-  } else bar.classList.add('hidden');
-}
-
-function toggleForm() { 
-  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores podem adicionar OS.'); return; }
-  document.getElementById('formOS').classList.toggle('hidden'); 
-}
-
+function toggleForm() { if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores.'); return; } document.getElementById('formOS').classList.toggle('hidden'); }
 async function salvarOS() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores podem salvar OS.'); return; }
-  
+  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores.'); return; }
   const id = document.getElementById('id').value.trim();
   const data = document.getElementById('data').value;
   const assunto = document.getElementById('assunto').value;
   const cidade = document.getElementById('cidade').value;
   const comissao = parseFloat(document.getElementById('comissao').value) || 0;
-  
   if (!id || !data || !assunto) { alert('Preencha todos os campos'); return; }
   if (editandoIndex === -1 && osExiste(id)) { alert(`OS #${id} já existe!`); return; }
-  
   const novaOS = { id, data, equipe: [tecnicoSelecionado.split(' ')[0]], assunto, cidade, comissao };
-  
-  await supabaseClient.from('os').upsert({
-    id, equipe: novaOS.equipe.join(' / '), assunto, data, cidade, comissao
-  }, { onConflict: 'id' });
-  
-  if (editandoIndex >= 0) dados[editandoIndex] = novaOS;
-  else dados.push(novaOS);
-  
+  await supabaseClient.from('os').upsert({ id, equipe: novaOS.equipe.join(' / '), assunto, data, cidade, comissao }, { onConflict: 'id' });
+  if (editandoIndex >= 0) dados[editandoIndex] = novaOS; else dados.push(novaOS);
   dados.sort((a, b) => new Date(b.data) - new Date(a.data));
-  atualizarTabela(); atualizarStats();
-  toggleForm(); editandoIndex = -1;
+  atualizarTabela(); atualizarStats(); toggleForm(); editandoIndex = -1;
   carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking();
   alert('✅ OS salva!');
 }
-
-function editarOS(index) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores podem editar OS.'); return; }
-  const os = dados[index]; editandoIndex = index;
-  document.getElementById('editIndex').value = index;
-  document.getElementById('id').value = os.id;
-  document.getElementById('data').value = os.data;
-  document.getElementById('assunto').value = os.assunto;
-  document.getElementById('cidade').value = os.cidade || '';
-  document.getElementById('comissao').value = os.comissao;
-  document.getElementById('formOS').classList.remove('hidden');
-}
-
-async function excluirOS(index) {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores podem excluir OS.'); return; }
-  const os = dados[index];
-  if (!confirm('Excluir esta OS?')) return;
-  await supabaseClient.from('os').delete().eq('id', os.id);
-  dados.splice(index, 1);
-  atualizarTabela(); atualizarStats();
-  carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking();
-}
-
+function editarOS(index) { if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores.'); return; } const os = dados[index]; editandoIndex = index; document.getElementById('editIndex').value = index; document.getElementById('id').value = os.id; document.getElementById('data').value = os.data; document.getElementById('assunto').value = os.assunto; document.getElementById('cidade').value = os.cidade || ''; document.getElementById('comissao').value = os.comissao; document.getElementById('formOS').classList.remove('hidden'); }
+async function excluirOS(index) { if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores.'); return; } const os = dados[index]; if (!confirm('Excluir?')) return; await supabaseClient.from('os').delete().eq('id', os.id); dados.splice(index, 1); atualizarTabela(); atualizarStats(); carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking(); }
 function selecionarTodos(m) { document.querySelectorAll('#tbody input[type="checkbox"]').forEach(c => c.checked = m.checked); atualizarEstadoBotoes(); }
-
-async function excluirSelecionados() {
-  if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores podem excluir OS.'); return; }
-  const checks = document.querySelectorAll('#tbody input[type="checkbox"]:checked');
-  if (!checks.length) { alert('Selecione pelo menos uma OS'); return; }
-  if (!confirm(`Excluir ${checks.length} OS?`)) return;
-  
-  const indices = Array.from(checks).map(c => parseInt(c.dataset.index)).sort((a, b) => b - a);
-  for (const idx of indices) {
-    await supabaseClient.from('os').delete().eq('id', dados[idx].id);
-    dados.splice(idx, 1);
-  }
-  atualizarTabela(); atualizarStats();
-  carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking();
-}
-
-function atualizarEstadoBotoes() {
-  const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
-  const baseFiltrada = filtroAssunto ? base.filter(d => d.assunto === filtroAssunto) : base;
-  const temRegistros = baseFiltrada.length > 0;
-  const btnExcluir = document.getElementById('btnExcluirSelecionados');
-  const checkboxTodos = document.getElementById('checkboxTodos');
-  checkboxTodos.disabled = !temRegistros;
-  if (!temRegistros) checkboxTodos.checked = false;
-  const algumSelecionado = Array.from(document.querySelectorAll('#tbody input[type="checkbox"]')).some(cb => cb.checked);
-  btnExcluir.disabled = !temRegistros || !algumSelecionado;
-}
-
+async function excluirSelecionados() { if (usuarioLogado?.tipo !== 'admin') { alert('Apenas administradores.'); return; } const checks = document.querySelectorAll('#tbody input[type="checkbox"]:checked'); if (!checks.length) { alert('Selecione OS'); return; } if (!confirm(`Excluir ${checks.length} OS?`)) return; const indices = Array.from(checks).map(c => parseInt(c.dataset.index)).sort((a,b)=>b-a); for (const idx of indices) { await supabaseClient.from('os').delete().eq('id', dados[idx].id); dados.splice(idx, 1); } atualizarTabela(); atualizarStats(); carregarTecnicos(); atualizarEstadoBotoes(); atualizarRanking(); }
+function atualizarEstadoBotoes() { const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]))); const baseFiltrada = filtroAssunto ? base.filter(d => d.assunto === filtroAssunto) : base; const tem = baseFiltrada.length > 0; const btn = document.getElementById('btnExcluirSelecionados'); const chk = document.getElementById('checkboxTodos'); chk.disabled = !tem; if (!tem) chk.checked = false; const algum = document.querySelectorAll('#tbody input[type="checkbox"]:checked').length > 0; btn.disabled = !tem || !algum; }
 function atualizarTabela() {
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  let base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
+  const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+  let base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0])));
   if (filtroAssunto) base = base.filter(d => d.assunto === filtroAssunto);
-  
-  if (base.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;">Nenhuma OS encontrada</td></tr>`;
-    document.getElementById('checkboxTodos').disabled = true;
-    document.getElementById('btnExcluirSelecionados').disabled = true;
-    return;
-  }
-  
-  base.forEach(os => {
-    const indexReal = dados.indexOf(os);
-    const row = document.createElement('tr');
-    row.innerHTML = `<td><input type="checkbox" data-index="${indexReal}" onchange="atualizarEstadoBotoes()"></td><td><strong>${os.id}</strong></td><td>${new Date(os.data+'T00:00:00').toLocaleDateString('pt-BR')}</td><td>${os.assunto}</td><td>${os.cidade||'-'}</td><td>R$ ${(os.comissao/os.equipe.length).toFixed(2)}</td><td>${usuarioLogado?.tipo === 'admin' ? `<button onclick="editarOS(${indexReal})" style="padding:6px 8px;background:#ffc107;">✏️</button><button onclick="excluirOS(${indexReal})" style="padding:6px 8px;background:#dc3545;color:white;">🗑️</button>` : '<span style="color:#666;">---</span>'}</td>`;
-    tbody.appendChild(row);
-  });
-  
-  document.getElementById('checkboxTodos').disabled = false;
-  document.getElementById('btnExcluirSelecionados').disabled = true;
+  if (!base.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;">Nenhuma OS</td></tr>'; document.getElementById('checkboxTodos').disabled = true; document.getElementById('btnExcluirSelecionados').disabled = true; return; }
+  base.forEach(os => { const idx = dados.indexOf(os); const row = document.createElement('tr'); row.innerHTML = `<td><input type="checkbox" data-index="${idx}" onchange="atualizarEstadoBotoes()"></td><td><strong>${os.id}</strong></td><td>${new Date(os.data+'T00:00:00').toLocaleDateString('pt-BR')}</td><td>${os.assunto}</td><td>${os.cidade||'-'}</td><td>R$ ${(os.comissao/os.equipe.length).toFixed(2)}</td><td>${usuarioLogado?.tipo==='admin'?`<button onclick="editarOS(${idx})" style="padding:6px;background:#ffc107;">✏️</button><button onclick="excluirOS(${idx})" style="padding:6px;background:#dc3545;color:white;">🗑️</button>`:'<span>---</span>'}</td>`; tbody.appendChild(row); });
+  document.getElementById('checkboxTodos').disabled = false; document.getElementById('btnExcluirSelecionados').disabled = true;
 }
-
 function atualizarStats() {
-  const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0]) || tecnicoSelecionado.includes(e)));
-  const baseFiltrada = filtroAssunto ? base.filter(d => d.assunto === filtroAssunto) : base;
-  const totalOS = baseFiltrada.length;
-  let totalComissao = 0;
-  baseFiltrada.forEach(os => totalComissao += os.comissao / os.equipe.length);
-  const tecnico = tecnicos.find(t => t.nome === tecnicoSelecionado);
-  if (tecnico?.funcao === 'Líder') totalComissao += 100;
-  
-  const porAssunto = {};
-  baseFiltrada.forEach(os => { porAssunto[os.assunto] = (porAssunto[os.assunto] || 0) + 1; });
-  
-  let html = `
-    <div class="stat-card" onclick="limparFiltro()"><div class="stat-value">${totalOS}</div><div class="stat-label">Total de OS</div></div>
-    <div class="stat-card" onclick="mostrarDetalhamento('${tecnicoSelecionado}')"><div class="stat-value">R$ ${totalComissao.toFixed(2)}</div><div class="stat-label">Comissões ${tecnico?.funcao==='Líder'?'(c/ bônus)':''}</div></div>
-  `;
-  
-  Object.entries(porAssunto).sort((a, b) => b[1] - a[1]).forEach(([assunto, qtd]) => {
-    html += `<div class="stat-card ${filtroAssunto === assunto ? 'active-filter' : ''}" onclick="filtrarPorAssunto('${assunto}')" data-assunto="${assunto}"><div class="stat-value">${qtd}</div><div class="stat-label">${assunto}</div></div>`;
-  });
-  
+  const base = dados.filter(d => d.equipe?.some(e => e.includes(tecnicoSelecionado.split(' ')[0])));
+  const baseF = filtroAssunto ? base.filter(d => d.assunto === filtroAssunto) : base;
+  let totalCom = 0; baseF.forEach(o => totalCom += o.comissao / o.equipe.length);
+  const t = tecnicos.find(tn => tn.nome === tecnicoSelecionado); if (t?.funcao === 'Líder') totalCom += 100;
+  const porAssunto = {}; baseF.forEach(o => { porAssunto[o.assunto] = (porAssunto[o.assunto]||0)+1; });
+  let html = `<div class="stat-card" onclick="limparFiltro()"><div class="stat-value">${baseF.length}</div><div class="stat-label">Total OS</div></div><div class="stat-card" onclick="mostrarDetalhamento('${tecnicoSelecionado}')"><div class="stat-value">R$ ${totalCom.toFixed(2)}</div><div class="stat-label">Comissões</div></div>`;
+  Object.entries(porAssunto).sort((a,b)=>b[1]-a[1]).forEach(([a,q]) => { html += `<div class="stat-card ${filtroAssunto===a?'active-filter':''}" onclick="filtrarPorAssunto('${a}')" data-assunto="${a}"><div class="stat-value">${q}</div><div class="stat-label">${a}</div></div>`; });
   document.getElementById('stats').innerHTML = html;
 }
 
@@ -1208,11 +1158,7 @@ function mostrarConfirmacao(titulo, mensagem, onConfirm) {
   document.getElementById('modalConfirmacao').classList.remove('hidden');
   document.getElementById('btnConfirmarAcao').onclick = () => { if (callbackConfirmacao) callbackConfirmacao(); fecharConfirmacao(); };
 }
-function fecharConfirmacao() {
-  document.getElementById('overlayConfirmacao').classList.add('hidden');
-  document.getElementById('modalConfirmacao').classList.add('hidden');
-  callbackConfirmacao = null;
-}
+function fecharConfirmacao() { document.getElementById('overlayConfirmacao').classList.add('hidden'); document.getElementById('modalConfirmacao').classList.add('hidden'); }
 
 document.getElementById('modalConfig').addEventListener('click', e => { if (e.target === e.currentTarget) fecharConfiguracoes(); });
 document.getElementById('modalDetalhamento').addEventListener('click', e => { if (e.target === e.currentTarget) fecharDetalhamento(); });
